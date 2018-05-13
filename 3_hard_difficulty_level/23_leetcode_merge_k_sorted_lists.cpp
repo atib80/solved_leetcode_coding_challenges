@@ -1,7 +1,8 @@
 /*
 Leetcode coding challenge: Merge k sorted lists
 
-Merge k sorted linked lists and return it as one sorted list. Analyze and describe its complexity.
+Merge k sorted linked lists and return it as one sorted list. Analyze and
+describe its complexity.
 
 Example:
 
@@ -21,7 +22,7 @@ Output: 1->1->2->3->4->4->5->6
 struct ListNode {
   int val;
   ListNode* next;
-  ListNode(const int x) : val{x}, next(nullptr) {}
+  ListNode(const int x) : val{x}, next{} {}
 };
 
 class Solution {
@@ -39,19 +40,18 @@ class Solution {
     if (list_nodes.empty())
       return nullptr;
 
-    std::sort(std::begin(list_nodes), std::end(list_nodes), [](ListNode* lhs, ListNode* rhs) {
+    std::sort(std::begin(list_nodes), std::end(list_nodes),
+              [](ListNode* lhs, ListNode* rhs) {
 
-      return lhs->val < rhs->val;
+                return lhs->val < rhs->val;
 
-    });
+              });
 
     ListNode* head{list_nodes[0]};
-    list_nodes[0]->next = nullptr;
     ListNode* next{head};
 
     for (size_t i{1}; i < list_nodes.size(); i++) {
       next->next = list_nodes[i];
-      list_nodes[i]->next = nullptr;
       next = next->next;
     }
 
@@ -62,6 +62,6 @@ class Solution {
 };
 
 int main() {
-
+  
   return 0;
 }
