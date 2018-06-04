@@ -27,26 +27,25 @@ class Solution {
     unordered_map<char, int> needle_char_count{};
     for_each(begin(t), end(t), [&](const char ch) { needle_char_count[ch]++; });
 
-    unordered_map<char, int> substr_char_count{};
+    unordered_map<char, int> current_substr_char_count{};
     for (const pair<char, int>& p : needle_char_count) {
-      substr_char_count.insert(make_pair(p.first, 0));
+      current_substr_char_count.insert(make_pair(p.first, 0));
     }
 
     size_t min_substr_len{string::npos};
     string min_substr{};
     deque<pair<size_t, char>> current_substr_chars{
         {make_pair(start_pos, s[start_pos])}};
-    bool found_min_window_substr;
-    substr_char_count[s[start_pos]]++;
+    current_substr_char_count[s[start_pos]]++;
 
     while ((start_pos = s.find_first_of(t, start_pos + 1)) != string::npos) {
-      substr_char_count[s[start_pos]]++;
+      current_substr_char_count[s[start_pos]]++;
       current_substr_chars.emplace_back(make_pair(start_pos, s[start_pos]));
       if (current_substr_chars.size() >= needle_len) {
         while (current_substr_chars.size() > needle_len) {
-          if (substr_char_count[current_substr_chars.front().second] >
+          if (current_substr_char_count[current_substr_chars.front().second] >
               needle_char_count[current_substr_chars.front().second]) {
-            substr_char_count[current_substr_chars.front().second]--;
+            current_substr_char_count[current_substr_chars.front().second]--;
             current_substr_chars.pop_front();
           } else
             break;
@@ -55,15 +54,15 @@ class Solution {
         size_t substr_len{current_substr_chars.back().first -
                           current_substr_chars.front().first + 1};
         while (substr_len >= min_substr_len) {
-          substr_char_count[current_substr_chars.front().second]--;
+          current_substr_char_count[current_substr_chars.front().second]--;
           current_substr_chars.pop_front();
           substr_len = current_substr_chars.back().first -
                        current_substr_chars.front().first + 1;
         }
 
-        found_min_window_substr = true;
+        bool found_min_window_substr{true};
         for (const pair<char, int>& p : needle_char_count) {
-          if (substr_char_count[p.first] < p.second) {
+          if (current_substr_char_count[p.first] < p.second) {
             found_min_window_substr = false;
             break;
           }
@@ -121,7 +120,6 @@ class Solution {
 };
 
 int main() {
-  
   Solution s{};
   cout << "s.minWindow_v1(string{\"ADOBECODEBANC\"}, string{\"ABC\"}) -> "
        << s.minWindow_v1(string{"ADOBECODEBANC"}, string{"ABC"})
