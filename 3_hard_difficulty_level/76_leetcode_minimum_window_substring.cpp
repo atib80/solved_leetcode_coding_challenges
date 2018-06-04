@@ -43,9 +43,10 @@ class Solution {
       current_substr_chars.emplace_back(make_pair(start_pos, s[start_pos]));
       if (current_substr_chars.size() >= needle_len) {
         while (current_substr_chars.size() > needle_len) {
-          if (current_substr_char_count[current_substr_chars.front().second] >
-              needle_char_count[current_substr_chars.front().second]) {
-            current_substr_char_count[current_substr_chars.front().second]--;
+          const char ch_index{current_substr_chars.front().second};
+          if (current_substr_char_count[ch_index] >
+              needle_char_count[ch_index]) {
+            current_substr_char_count[ch_index]--;
             current_substr_chars.pop_front();
           } else
             break;
