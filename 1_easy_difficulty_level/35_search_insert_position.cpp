@@ -42,11 +42,7 @@ class Solution {
     const auto first = begin(nums);
     const auto last = end(nums);
     auto lb_iter = lower_bound(first, last, target);
-
-    if (lb_iter != last)
-      return distance(first, lb_iter);
-
-    return nums.size();
+    return static_cast<ptrdiff_t>(lb_iter - first);
   }
 };
 
