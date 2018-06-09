@@ -93,11 +93,14 @@ class Solution {
         next_sequence.push_back(current_sequence[j]);
       }
 
+      if (precalculated_count_and_say_sequences.find(i) ==
+          end(precalculated_count_and_say_sequences))
+        precalculated_count_and_say_sequences.insert(
+            make_pair(i, next_sequence));
+
       swap(current_sequence, next_sequence);
       next_sequence.clear();
     }
-
-    precalculated_count_and_say_sequences[n] = current_sequence;
 
     return current_sequence;
   }
@@ -105,16 +108,16 @@ class Solution {
 
 int main() {
   Solution s{};
-  cout << s.countAndSay(1) << '\n';  // expected output: "1"
-  cout << s.countAndSay(2) << '\n';  // expected output: "11"
-  cout << s.countAndSay(3) << '\n';  // expected output: "21"
-  cout << s.countAndSay(4) << '\n';  // expected output: "1211"
-  cout << s.countAndSay(5) << '\n';  // expected output: "111221"
-  cout << s.countAndSay(6) << '\n';  // expected output: "312211"
-  cout << s.countAndSay(7) << '\n';  // expected output: "13112221"
-  cout << s.countAndSay(8) << '\n';  // expected output: "1113213211"
-  cout << s.countAndSay(9) << '\n';  // expected output: "31131211131221"
-  cout << s.countAndSay(10) << '\n'; // expected output: "13211311123113112211"
+  cout << s.countAndSay(1) << '\n';   // expected output: "1"
+  cout << s.countAndSay(2) << '\n';   // expected output: "11"
+  cout << s.countAndSay(3) << '\n';   // expected output: "21"
+  cout << s.countAndSay(8) << '\n';   // expected output: "1113213211"
+  cout << s.countAndSay(4) << '\n';   // expected output: "1211"
+  cout << s.countAndSay(5) << '\n';   // expected output: "111221"
+  cout << s.countAndSay(10) << '\n';  // expected output: "13211311123113112211"
+  cout << s.countAndSay(6) << '\n';   // expected output: "312211"
+  cout << s.countAndSay(7) << '\n';   // expected output: "13112221"
+  cout << s.countAndSay(9) << '\n';   // expected output: "31131211131221"
 
   return 0;
 }
