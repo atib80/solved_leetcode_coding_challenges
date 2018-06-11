@@ -21,7 +21,9 @@ Output: [-1,-1]
 
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 using std::cout;
@@ -32,7 +34,16 @@ using std::string;
 using std::vector;
 
 template <typename T>
+
 void print_range(T&& first, T&& last) {
+  static_assert(
+      std::is_same_v<typename std::iterator_traits<T>::iterator_category,
+                     std::forward_iterator_tag> ||
+      std::is_same_v<typename std::iterator_traits<T>::iterator_category,
+                     std::bidirectional_iterator_tag> ||
+      std::is_same_v<typename std::iterator_traits<T>::iterator_category,
+                     std::random_access_iterator_tag> ||
+      std::is_pointer_v<T>);
   if (first == last)
     return;
   --last;
@@ -74,6 +85,10 @@ int main() {
                          6);  // expected output: -1,-1
   print_range(begin(result), end(result));
   cout << '\n';
+
+  int numbers[10]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+  print_range(&numbers[0], &numbers[0] + 10);
 
   return 0;
 }
