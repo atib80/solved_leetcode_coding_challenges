@@ -34,16 +34,15 @@ using std::string;
 using std::vector;
 
 template <typename T>
-
 void print_range(T&& first, T&& last) {
   static_assert(
-      std::is_same_v<typename std::iterator_traits<T>::iterator_category,
-                     std::forward_iterator_tag> ||
-      std::is_same_v<typename std::iterator_traits<T>::iterator_category,
-                     std::bidirectional_iterator_tag> ||
-      std::is_same_v<typename std::iterator_traits<T>::iterator_category,
-                     std::random_access_iterator_tag> ||
-      std::is_pointer_v<T>);
+      std::is_same<typename std::iterator_traits<T>::iterator_category,
+                   std::forward_iterator_tag>::value ||
+      std::is_same<typename std::iterator_traits<T>::iterator_category,
+                   std::bidirectional_iterator_tag>::value ||
+      std::is_same<typename std::iterator_traits<T>::iterator_category,
+                   std::random_access_iterator_tag>::value ||
+      std::is_pointer<T>::value);
   if (first == last)
     return;
   --last;

@@ -1,12 +1,9 @@
 /*
-Leetcode coding challenge: Combination sum
+Given a collection of candidate numbers (candidates) and a target number
+(target), find all unique combinations in candidates where the candidate numbers
+sums to target.
 
-Given a set of candidate numbers (candidates) (without duplicates) and a target
-number (target), find all unique combinations in candidates where the candidate
-numbers sums to target.
-
-The same repeated number may be chosen from candidates unlimited number of
-times.
+Each number in candidates may only be used once in the combination.
 
 Note:
 
@@ -15,31 +12,30 @@ Note:
 
 Example 1:
 
-Input: candidates = [2,3,6,7], target = 7,
+Input: candidates = [10,1,2,7,6,1,5], target = 8,
 A solution set is:
 [
-  [7],
-  [2,2,3]
+  [1, 7],
+  [1, 2, 5],
+  [2, 6],
+  [1, 1, 6]
 ]
 
 Example 2:
 
-Input: candidates = [2,3,5], target = 8,
+Input: candidates = [2,5,2,1,2], target = 5,
 A solution set is:
 [
-  [2,2,2,2],
-  [2,3,3],
-  [3,5]
+  [1,2,2],
+  [5]
 ]
 */
 
 #include <algorithm>
 #include <iostream>
-#include <iterator>
 #include <queue>
 #include <string>
 #include <tuple>
-#include <type_traits>
 #include <unordered_set>
 #include <vector>
 
@@ -55,14 +51,6 @@ using std::vector;
 
 template <typename T>
 void print_range(T&& first, T&& last) {
-  static_assert(
-      std::is_same<typename std::iterator_traits<T>::iterator_category,
-                     std::forward_iterator_tag>::value ||
-      std::is_same<typename std::iterator_traits<T>::iterator_category,
-                     std::bidirectional_iterator_tag>::value ||
-      std::is_same<typename std::iterator_traits<T>::iterator_category,
-                     std::random_access_iterator_tag>::value ||
-      std::is_pointer<T>::value);
   if (first == last)
     return;
   --last;
@@ -88,20 +76,11 @@ inline void generate_hash_index(const vector<int>& seq, string& hash_index) {
 
 class Solution {
  public:
-  vector<vector<int>> combinationSum(vector<int>& candidates,
-                                     const int target) {
-    size_t candidates_size{candidates.size()};
-    candidates.reserve(4096);
-
-    for (size_t i{}; i < candidates_size; i++) {
-      const int n_times{target / candidates[i] - 1};
-      if (n_times > 0)
-        candidates.insert(end(candidates), n_times, candidates[i]);
-    }
+  vector<vector<int>> combinationSum2(vector<int>& candidates,
+                                      const int target) {
+    const size_t candidates_size{candidates.size()};
 
     sort(begin(candidates), end(candidates));
-
-    candidates_size = candidates.size();
 
     queue<tuple<size_t, int, vector<int>>> q{{make_tuple(0, 0, vector<int>{})}};
 
@@ -138,7 +117,7 @@ class Solution {
             q.emplace(
                 make_tuple(i + 1, current_sum + candidates[i], current_seq));
             current_seq.pop_back();
-          } else {
+          } else if (candidates_size - 1 == i) {
             q.emplace(make_tuple(i + 1, current_sum + candidates[i],
                                  move(current_seq)));
             break;
@@ -153,28 +132,30 @@ class Solution {
 
 int main() {
   Solution s{};
-  vector<int> input{2, 3, 6, 7};
-  vector<vector<int>> result_set{s.combinationSum(input, 7)};
+  vector<int> input{10, 1, 2, 7, 6, 1, 5};
+  vector<vector<int>> result_set{s.combinationSum2(input, 8)};
 
   cout << '\n';
   for (const vector<int>& v : result_set)
     print_range(begin(v), end(v));
 
-  input.assign({2, 3, 5});
-  result_set = s.combinationSum(input, 8);
+  input.assign({2, 5, 2, 1, 2});
+  result_set = s.combinationSum2(input, 5);
 
   cout << '\n';
   for (const vector<int>& v : result_set)
     print_range(begin(v), end(v));
 
+  /*
   input.assign({92,  71,  89, 74,  102, 91,  70,  119, 86, 116,
                 114, 106, 80, 81,  115, 99,  117, 93,  76, 77,
                 111, 110, 75, 104, 95,  112, 94,  73});
-  result_set = s.combinationSum(input, 310);
+  result_set = s.combinationSum2(input, 310);
 
   cout << '\n';
   for (const vector<int>& v : result_set)
     print_range(begin(v), end(v));
+  */
 
   return 0;
 }
