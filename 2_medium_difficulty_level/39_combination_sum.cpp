@@ -42,8 +42,8 @@ A solution set is:
 #include <vector>
 
 using std::cout;
+using std::for_each;
 using std::get;
-using std::ostream;
 using std::queue;
 using std::sort;
 using std::string;
@@ -52,19 +52,13 @@ using std::unordered_set;
 using std::vector;
 
 template <typename T>
-ostream& operator<<(ostream& os, const vector<T>& container) {
-  auto first = begin(container);
-  auto last = end(container);
+void print_range(T&& first, T&& last) {
+  if (first == last)
+    return;
   --last;
-  os << '{';
-  while (first != last) {
-    os << *first << ',';
-    ++first;
-  }
+  for_each(first, last, [](const auto& data) { cout << data << ','; });
 
-  os << *first << '}';
-
-  return os;
+  cout << *last << '\n';
 }
 
 inline void generate_hash_index(const vector<int>& seq, string& hash_index) {
@@ -154,14 +148,14 @@ int main() {
 
   cout << '\n';
   for (const vector<int>& v : result_set)
-    cout << v << '\n';
+    print_range(begin(v), end(v));
 
   input.assign({2, 3, 5});
   result_set = s.combinationSum(input, 8);
 
   cout << '\n';
   for (const vector<int>& v : result_set)
-    cout << v << '\n';
+    print_range(begin(v), end(v));
 
   input.assign({92,  71,  89, 74,  102, 91,  70,  119, 86, 116,
                 114, 106, 80, 81,  115, 99,  117, 93,  76, 77,
@@ -170,7 +164,7 @@ int main() {
 
   cout << '\n';
   for (const vector<int>& v : result_set)
-    cout << v << '\n';
+    print_range(begin(v), end(v));
 
   return 0;
 }

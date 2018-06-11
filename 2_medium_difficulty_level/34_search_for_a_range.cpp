@@ -1,4 +1,6 @@
 /*
+Leetcode coding challenge: Search for a range
+
 Given an array of integers nums sorted in ascending order, find the starting and
 ending position of a given target value.
 
@@ -16,6 +18,7 @@ Example 2:
 Input: nums = [5,7,7,8,8,10], target = 6
 Output: [-1,-1]
 */
+
 #include <algorithm>
 #include <iostream>
 #include <string>
@@ -24,24 +27,18 @@ Output: [-1,-1]
 using std::cout;
 using std::distance;
 using std::equal_range;
-using std::ostream;
+using std::for_each;
 using std::string;
 using std::vector;
 
 template <typename T>
-ostream& operator<<(ostream& os, const vector<T>& container) {
-  auto first = begin(container);
-  auto last = end(container);
+void print_range(T&& first, T&& last) {
+  if (first == last)
+    return;
   --last;
-  os << '{';
-  while (first != last) {
-    os << *first << ',';
-    ++first;
-  }
+  for_each(first, last, [](const auto& data) { cout << data << ','; });
 
-  os << *first << '}';
-
-  return os;
+  cout << *last << '\n';
 }
 
 class Solution {
@@ -69,12 +66,14 @@ int main() {
   vector<int> result{s.searchRange(vector<int>{5, 7, 7, 8, 8, 10},
                                    8)};  // expected output: 3,4
 
-  cout << result << '\n';
+  print_range(begin(result), end(result));
+  cout << '\n';
 
   cout << "s.searchRange({5,7,7,8,8,10}, 6) -> ";
   result = s.searchRange(vector<int>{5, 7, 7, 8, 8, 10},
                          6);  // expected output: -1,-1
-  cout << result << "\n\n";
+  print_range(begin(result), end(result));
+  cout << '\n';
 
   return 0;
 }
