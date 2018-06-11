@@ -67,23 +67,22 @@ ostream& operator<<(ostream& os, const vector<T>& container) {
   return os;
 }
 
-class Solution {
-	
-  static void generate_hash_index(const vector<int>& seq, string& hash_index) {
-    hash_index.clear();
+inline void generate_hash_index(const vector<int>& seq, string& hash_index) {
+  hash_index.clear();
 
-    for (int n : seq) {
-      while (n) {
-        hash_index.push_back(n % 10 + '0');
-        n /= 10;
-      }
-
-      hash_index.push_back(',');
+  for (int n : seq) {
+    while (n) {
+      hash_index.push_back(n % 10 + '0');
+      n /= 10;
     }
 
-    hash_index.pop_back();
+    hash_index.push_back(',');
   }
 
+  hash_index.pop_back();
+}
+
+class Solution {
  public:
   vector<vector<int>> combinationSum(vector<int>& candidates,
                                      const int target) {
@@ -117,10 +116,6 @@ class Solution {
       for (size_t i{current_pos}; i < candidates_size; i++) {
         if (target == current_sum + candidates[i]) {
           current_seq.emplace_back(candidates[i]);
-          generate_hash_index(current_seq, hash_index);
-          if (already_visited_sequences.count(hash_index))
-            break;
-          already_visited_sequences.insert(hash_index);
           unique_combinations.push_back(move(current_seq));
           break;
 
