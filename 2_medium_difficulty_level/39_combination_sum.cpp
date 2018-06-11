@@ -87,6 +87,7 @@ class Solution {
   vector<vector<int>> combinationSum(vector<int>& candidates,
                                      const int target) {
     size_t candidates_size{candidates.size()};
+    candidates.reserve(4096);
 
     for (size_t i{}; i < candidates_size; i++) {
       const int n_times{target / candidates[i] - 1};
@@ -100,7 +101,6 @@ class Solution {
 
     queue<tuple<size_t, int, vector<int>>> q{{make_tuple(0, 0, vector<int>{})}};
 
-    unordered_set<int> already_visited_first_numbers{};
     unordered_set<string> already_visited_sequences{};
     string hash_index{};
     hash_index.reserve(1024);
@@ -123,29 +123,21 @@ class Solution {
           break;
 
         else {
-          if (current_seq.empty()) {
-            if (already_visited_first_numbers.count(candidates[i]))
-              continue;
-            already_visited_first_numbers.insert(candidates[i]);
+          current_seq.emplace_back(candidates[i]);
+          generate_hash_index(current_seq, hash_index);
+          if (already_visited_sequences.count(hash_index)) {
+            current_seq.pop_back();
+            continue;
+          }
+          already_visited_sequences.insert(hash_index);
+          if (i < candidates_size - 1) {
             q.emplace(
-                make_tuple(i + 1, candidates[i], vector<int>{candidates[i]}));
+                make_tuple(i + 1, current_sum + candidates[i], current_seq));
+            current_seq.pop_back();
           } else {
-            current_seq.emplace_back(candidates[i]);
-            generate_hash_index(current_seq, hash_index);
-            if (already_visited_sequences.count(hash_index)) {
-              current_seq.pop_back();
-              continue;
-            }
-            already_visited_sequences.insert(hash_index);
-            if (i < candidates_size - 1) {
-              q.emplace(
-                  make_tuple(i + 1, current_sum + candidates[i], current_seq));
-              current_seq.pop_back();
-            } else {
-              q.emplace(make_tuple(i + 1, current_sum + candidates[i],
-                                   move(current_seq)));
-              break;
-            }
+            q.emplace(make_tuple(i + 1, current_sum + candidates[i],
+                                 move(current_seq)));
+            break;
           }
         }
       }
