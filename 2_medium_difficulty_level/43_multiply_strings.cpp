@@ -21,14 +21,13 @@ itself. You must not use any built-in BigInteger library or convert the inputs
 to integer directly.
 */
 
-#include <algorithm>
 #include <iostream>
 #include <string>
+#include <vector>
 
 using std::cout;
-using std::max;
-using std::min;
 using std::string;
+using std::vector;
 
 class Solution {
  public:
@@ -56,7 +55,8 @@ class Solution {
     const size_t max_product_row_index{min_num_len + max_num_len + 1};
     const size_t max_product_row_size{max_product_row_index + 1};
 
-    int* products = new int[(min_num_len + 1) * max_product_row_size]{};
+    vector<int> products(min_num_len * max_product_row_size);
+    string result(256, '0');
 
     int carry{};
     for (int i = min_num_len - 1, k{}; i >= 0; i--, k++) {
@@ -77,35 +77,25 @@ class Solution {
     }
 
     carry = 0;
+    int offset{};
 
-    for (size_t j{max_product_row_index}; j >= 1; j--) {
+    for (size_t j{max_product_row_index}; j >= 1; j--, offset++) {
       int sum{carry};
 
       for (size_t i{}; i < min_num_len; i++)
         sum += products[i * max_product_row_size + j];
 
-      products[min_num_len * max_product_row_size + j] = sum % 10;
+      result[255 - offset] = static_cast<char>(sum % 10 + '0');
       carry = sum / 10;
     }
 
-    products[min_num_len * max_product_row_size] = carry;
+    result[255 - offset] = static_cast<char>(carry + '0');
 
-    string result{};
-
-    bool skip_zero{true};
-
-    for (size_t i{}; i <= max_product_row_index; i++) {
-      if (!products[min_num_len * max_product_row_size + i] && skip_zero)
-        continue;
-      skip_zero = false;
-      result.push_back(static_cast<char>(
-          products[min_num_len * max_product_row_size + i] + '0'));
-    }
-
-    delete[] products;
-
-    return result;
-  }
+    offset = 255 - offset;
+    while ('0' == result[offset])
+      ++offset;
+    return result.substr(offset);
+  }      
 };
 
 int main() {
