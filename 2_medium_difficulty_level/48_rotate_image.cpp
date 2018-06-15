@@ -59,13 +59,13 @@ template <typename T>
 ostream& operator<<(ostream& os, const vector<vector<T>>& data) {
   os << "\n[\n";
   for (size_t i{}; i < data.size() - 1; i++) {
-    os << "\t[";
+    os << "  [";
     for (size_t j{}; j < data[i].size() - 1; j++)
       os << data[i][j] << ',';
     os << data[i].back() << "],\n";
   }
 
-  os << "\t[";
+  os << "  [";
   for (size_t j{}; j < data.back().size() - 1; j++)
     os << data.back()[j] << ',';
   os << data.back().back() << "]\n]\n";
@@ -76,6 +76,8 @@ ostream& operator<<(ostream& os, const vector<vector<T>>& data) {
 class Solution {
  public:
   void rotate(vector<vector<int>>& matrix) {
+    if (matrix.empty() || matrix.size() != matrix.front().size())
+      return;
     const size_t highest_index{matrix.size() - 1};
     size_t min_index{}, max_index{highest_index};
 
