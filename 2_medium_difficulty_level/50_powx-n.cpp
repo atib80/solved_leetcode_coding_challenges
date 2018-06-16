@@ -24,38 +24,35 @@ Note:
 */
 
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 
-using std::abs;
-using std::cout;
+using namespace std;
+
+static int sres = []() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+  return 0;
+}();
 
 class Solution {
  public:
   double myPow(double x, int n) {
+    const bool is_negative{n < 0};
+    if (!x)
+      return 0;
     if (!n)
       return 1;
-    if (1 == n)
-      return x;
-    if (-1 == n)
-      return 1 / x;
-    if (1.0 == x)
-      return 1.0;
-    if (-1.0 == x)
-      return n % 2 ? -1.0 : 1.0;
-    if (INT_MIN == n && abs(x) > 1.0)
-      return 0;
-    if (abs(x) < 0.001 && n > 1000)
-      return 0;
-    const bool is_negative_exp{n < 0};
-    if (INT_MIN == n)
-      n++;
-    n = abs(n);
+    int64_t abs_n{abs(static_cast<int64_t>(n))};
+    double result{1};
+    for (size_t i{}; i < 32u; i++) {
+      if (abs_n & 1)
+        result *= x;
+      abs_n >>= 1;
+      x *= x;
+    }
 
-    double result{x};
-    for (int exp{2}; exp <= n; exp++)
-      result *= x;
-
-    return !is_negative_exp ? result : 1 / result;
+    return is_negative ? 1 / result : result;
   }
 };
 
