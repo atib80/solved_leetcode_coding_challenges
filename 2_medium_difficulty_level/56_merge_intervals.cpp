@@ -1,4 +1,6 @@
 /*
+56. leetcode coding challenge: Merge Intervals
+
 Given a collection of intervals, merge all overlapping intervals.
 
 Example 1:
