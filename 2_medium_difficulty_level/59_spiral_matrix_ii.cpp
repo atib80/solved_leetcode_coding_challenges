@@ -113,60 +113,56 @@ class Solution {
     vector<vector<int>> result(n, vector<int>(n));
     int min_x{}, max_x{n - 1};
     int min_y{}, max_y{n - 1};
-    int x{min_x}, y{min_y};
-    const int max_cells{n * n};
+    int x{}, y{};
+
     int cells_visited{};
 
     while (true) {
-      while (y <= max_y && cells_visited < max_cells) {
+      while (y <= max_y) {
         result[min_x][y] = cells_visited + 1;
         cells_visited++;
         y++;
       }
 
-      if (max_cells == cells_visited)
-        break;
-
       min_x++;
+      if (min_x > max_x)
+        break;
       x = min_x;
       y = max_y;
 
-      while (x <= max_x && cells_visited < max_cells) {
+      while (x <= max_x) {
         result[x][max_y] = cells_visited + 1;
         cells_visited++;
         x++;
       }
 
-      if (max_cells == cells_visited)
-        break;
-
       max_y--;
+      if (min_y > max_y)
+        break;
       y = max_y;
       x = max_x;
 
-      while (y >= min_y && cells_visited < max_cells) {
+      while (y >= min_y) {
         result[max_x][y] = cells_visited + 1;
         cells_visited++;
         y--;
       }
 
-      if (max_cells == cells_visited)
-        break;
-
       max_x--;
+      if (min_x > max_x)
+        break;
       x = max_x;
       y = min_y;
 
-      while (x >= min_x && cells_visited < max_cells) {
+      while (x >= min_x) {
         result[x][min_y] = cells_visited + 1;
         cells_visited++;
         x--;
       }
 
-      if (max_cells == cells_visited)
-        break;
-
       min_y++;
+      if (min_y > max_y)
+        break;
       y = min_y;
       x = min_x;
     }
@@ -177,13 +173,24 @@ class Solution {
 
 int main() {
   Solution s{};
-  vector<vector<int>> output{s.generateMatrix(3)};
-  cout << "s.generateMatrix(3) -> " << output << '\n';
+  vector<vector<int>> output1{s.generateMatrix(3)};
+  cout << "s.generateMatrix(3) -> " << output1 << '\n';
   /*
   [
    [ 1, 2, 3 ],
    [ 8, 9, 4 ],
    [ 7, 6, 5 ]
+  ]
+  */
+
+  vector<vector<int>> output2{s.generateMatrix(4)};
+  cout << "s.generateMatrix(4) -> " << output2 << '\n';
+  /*
+  [
+   [ 1,  2,  3,  4 ],
+   [ 12, 13, 14, 5 ],
+   [ 11, 16, 15, 6 ],
+   [ 10, 9,  8,  7 ]
   ]
   */
   return 0;
