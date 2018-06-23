@@ -40,6 +40,7 @@ range [0, 10^9].
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 using namespace std;
@@ -60,61 +61,76 @@ struct TimeInterval {
 
 class MyCalendarThree {
   int max_booking_level{};
-  vector<TimeInterval> time_intervals{};
-
-  void find_max_booking_level_for_specified_time_interval(
-      const size_t last_index,
-      const int start,
-      const int end,
-      vector<int>& already_visited,
-      int& max_booking_factor,
-      const int count = 1) {
-    for (size_t i{}; i < last_index; i++) {
-      if (already_visited[i])
-        continue;
-      if ((start <= time_intervals[i].start && end > time_intervals[i].start) ||
-          (start < time_intervals[i].end && end > time_intervals[i].start)) {
-        already_visited[i] = 1;
-        find_max_booking_level_for_specified_time_interval(
-            last_index, max(start, time_intervals[i].start),
-            min(end, time_intervals[i].end), already_visited,
-            max_booking_factor, count + 1);
-        already_visited[i] = 0;
-      }
-    }
-
-    if (count > max_booking_factor)
-      max_booking_factor = count;
-  }
+  // vector<TimeInterval> time_intervals{};
+  vector<pair<TimeInterval, int>> previously_calculated_booking_levels{};
 
  public:
-  MyCalendarThree() { time_intervals.reserve(400); }
+  MyCalendarThree() { previously_calculated_booking_levels.reserve(1024); }
 
-  int book(const int start, const int end) {
-    // if (start >= end) return max_booking_level;
-    time_intervals.emplace_back(start, end);
-
-    if (1 == time_intervals.size()) {
+  int book(const int start_time, const int end_time) {
+    // if (start_time >= end_time) return max_booking_level;
+    // time_intervals.emplace_back(start_time, end_time);
+    if (previously_calculated_booking_levels.empty()) {
+      previously_calculated_booking_levels.emplace_back(
+          make_pair(TimeInterval{start_time, end_time}, 1));
       max_booking_level = 1;
       return 1;
     }
 
-    int count{1};
-    int max_booking_factor{1};
-    const size_t last_index{time_intervals.size() - 1};
-    vector<int> already_visited(last_index, 0);
+    /*
+    if (1 == time_intervals.size()) {
+      max_booking_level = 1;
+      return 1;
+    }
+        */
 
-    for (size_t i{}; i < last_index; i++) {
-      if ((start <= time_intervals[i].start && end > time_intervals[i].start) ||
-          (start < time_intervals[i].end && end > time_intervals[i].start)) {
-        already_visited[i] = 1;
-        find_max_booking_level_for_specified_time_interval(
-            last_index, max(start, time_intervals[i].start),
-            min(end, time_intervals[i].end), already_visited,
-            max_booking_factor, count + 1);
-        already_visited[i] = 0;
+    // int count{1};
+    int max_booking_factor{1};
+    // const size_t last_index{time_intervals.size() - 1};
+    // vector<int> already_visited(last_index, 0);
+    // for (size_t i{}; i < last_index; i++) {
+
+    const size_t prev_calc_booking_levels{
+        previously_calculated_booking_levels.size()};
+    for (size_t j{}; j < prev_calc_booking_levels; j++) {
+      if ((start_time <= previously_calculated_booking_levels[j].first.start &&
+           end_time > previously_calculated_booking_levels[j].first.start) ||
+          (start_time < previously_calculated_booking_levels[j].first.end &&
+           end_time > previously_calculated_booking_levels[j].first.start)) {
+        previously_calculated_booking_levels.emplace_back(make_pair(
+            TimeInterval{
+                max(previously_calculated_booking_levels[j].first.start,
+                    start_time),
+                min(previously_calculated_booking_levels[j].first.end,
+                    end_time)},
+            previously_calculated_booking_levels[j].second + 1));
+        // previously_calculated_booking_levels[j].second++;
+        // previously_calculated_booking_levels[j].first.start =
+        // max(previously_calculated_booking_levels[j].first.start,
+        // time_intervals[i].start);
+        // previously_calculated_booking_levels[j].first.end =
+        // min(previously_calculated_booking_levels[j].first.end,
+        // time_intervals[i].end);
+        if (previously_calculated_booking_levels.back().second >
+            max_booking_factor)
+          max_booking_factor =
+              previously_calculated_booking_levels.back().second;
+        continue;
       }
     }
+
+    /*
+    if ((start_time <= time_intervals[i].start && end_time >
+    time_intervals[i].start) || (start_time < time_intervals[i].end && end_time
+    > time_intervals[i].start)) { already_visited[i] = 1;
+      find_max_booking_level_for_specified_time_interval(
+          last_index, max(start_time, time_intervals[i].start),
+          min(end_time, time_intervals[i].end), already_visited,
+          max_booking_factor, count + 1);
+      already_visited[i] = 0;
+    }
+    */
+    // }
 
     max_booking_level = max_booking_factor > max_booking_level
                             ? max_booking_factor
