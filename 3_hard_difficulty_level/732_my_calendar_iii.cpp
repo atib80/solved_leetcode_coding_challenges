@@ -40,7 +40,6 @@ range [0, 10^9].
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
-#include <unordered_set>
 #include <vector>
 
 using namespace std;
@@ -67,20 +66,20 @@ class MyCalendarThree {
       const size_t last_index,
       const int start,
       const int end,
-      unordered_set<size_t>& already_visited,
+      vector<int>& already_visited,
       int& max_booking_factor,
       const int count = 1) {
     for (size_t i{}; i < last_index; i++) {
-      if (already_visited.count(i))
+      if (already_visited[i])
         continue;
       if ((start <= time_intervals[i].start && end > time_intervals[i].start) ||
           (start < time_intervals[i].end && end > time_intervals[i].start)) {
-        already_visited.insert(i);
+        already_visited[i] = 1;
         find_max_booking_level_for_specified_time_interval(
             last_index, max(start, time_intervals[i].start),
             min(end, time_intervals[i].end), already_visited,
             max_booking_factor, count + 1);
-        already_visited.erase(i);
+        already_visited[i] = 0;
       }
     }
 
@@ -103,17 +102,17 @@ class MyCalendarThree {
     int count{1};
     int max_booking_factor{1};
     const size_t last_index{time_intervals.size() - 1};
-    unordered_set<size_t> already_visited{};
+    vector<int> already_visited(last_index, 0);
 
     for (size_t i{}; i < last_index; i++) {
       if ((start <= time_intervals[i].start && end > time_intervals[i].start) ||
           (start < time_intervals[i].end && end > time_intervals[i].start)) {
-        already_visited.insert(i);
+        already_visited[i] = 1;
         find_max_booking_level_for_specified_time_interval(
             last_index, max(start, time_intervals[i].start),
             min(end, time_intervals[i].end), already_visited,
             max_booking_factor, count + 1);
-        already_visited.erase(i);
+        already_visited[i] = 0;
       }
     }
 
