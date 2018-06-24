@@ -38,7 +38,6 @@ range [0, 10^9].
 */
 
 #include <algorithm>
-#include <cstdint>
 #include <iostream>
 #include <utility>
 #include <vector>
@@ -54,83 +53,73 @@ static int sres = []() {
 struct TimeInterval {
   int start;
   int end;
+  int k_level;
 
-  explicit TimeInterval(const int start, const int end)
-      : start{start}, end{end} {}
+  explicit TimeInterval(const int start_time, const int end_time, const int kl)
+      : start{start_time}, end{end_time}, k_level{kl} {}
 };
 
 class MyCalendarThree {
   int max_booking_level{};
-  // vector<TimeInterval> time_intervals{};
-  vector<pair<TimeInterval, int>> previously_calculated_booking_levels{};
+  vector<TimeInterval> ti_diff{};
 
  public:
-  MyCalendarThree() { previously_calculated_booking_levels.reserve(1024); }
+  MyCalendarThree() { ti_diff.reserve(1024); }
 
-  int book(const int start_time, const int end_time) {
-    // if (start_time >= end_time) return max_booking_level;
-    // time_intervals.emplace_back(start_time, end_time);
-    if (previously_calculated_booking_levels.empty()) {
-      previously_calculated_booking_levels.emplace_back(
-          make_pair(TimeInterval{start_time, end_time}, 1));
+  // [8,23],[35,48],[24,39],[10,22],[10,23],[8,22],[1,14],[36,50],[42,50],[42,50]
+
+  // 1. [8,23] -> 1
+  // 2. [35,48]:1 -> 1
+  // 3. [8,23]:1, [24,35]:1, [35,39]:2, [39,48]:1
+
+  int book(const int start, const int end) {
+    if (ti_diff.empty()) {
+      ti_diff.emplace_back(start, end, 1);
       max_booking_level = 1;
       return 1;
     }
 
-    /*
-    if (1 == time_intervals.size()) {
-      max_booking_level = 1;
-      return 1;
-    }
-        */
-
-    // int count{1};
     int max_booking_factor{1};
-    // const size_t last_index{time_intervals.size() - 1};
-    // vector<int> already_visited(last_index, 0);
-    // for (size_t i{}; i < last_index; i++) {
+    bool inserted{};
 
-    const size_t prev_calc_booking_levels{
-        previously_calculated_booking_levels.size()};
-    for (size_t j{}; j < prev_calc_booking_levels; j++) {
-      if ((start_time <= previously_calculated_booking_levels[j].first.start &&
-           end_time > previously_calculated_booking_levels[j].first.start) ||
-          (start_time < previously_calculated_booking_levels[j].first.end &&
-           end_time > previously_calculated_booking_levels[j].first.start)) {
-        previously_calculated_booking_levels.emplace_back(make_pair(
-            TimeInterval{
-                max(previously_calculated_booking_levels[j].first.start,
-                    start_time),
-                min(previously_calculated_booking_levels[j].first.end,
-                    end_time)},
-            previously_calculated_booking_levels[j].second + 1));
-        // previously_calculated_booking_levels[j].second++;
-        // previously_calculated_booking_levels[j].first.start =
-        // max(previously_calculated_booking_levels[j].first.start,
-        // time_intervals[i].start);
-        // previously_calculated_booking_levels[j].first.end =
-        // min(previously_calculated_booking_levels[j].first.end,
-        // time_intervals[i].end);
-        if (previously_calculated_booking_levels.back().second >
-            max_booking_factor)
-          max_booking_factor =
-              previously_calculated_booking_levels.back().second;
+    const size_t ti_diff_size{ti_diff.size()};
+
+    for (size_t i{}; i < ti_diff_size; i++) {
+      if (start == ti_diff[i].start && end == ti_diff[i].end) {
+        ti_diff[i].k_level++;
+        if (ti_diff[i].k_level > max_booking_factor)
+          max_booking_factor = ti_diff[i].k_level;
+        inserted = true;
         continue;
+      }
+
+      if (start < ti_diff[i].start && end > ti_diff[i].end) {
+        ti_diff[i].k_level++;
+        if (ti_diff[i].k_level > max_booking_factor)
+          max_booking_factor = ti_diff[i].k_level;
+        ti_diff.emplace_back(start, ti_diff[i].start, 1);
+        ti_diff.emplace_back(ti_diff[i].end, end, 1);
+        inserted = true;
+        continue;
+      }
+
+      if ((start <= ti_diff[i].start && end > ti_diff[i].start) ||
+          (start < ti_diff[i].end && end >= ti_diff[i].end)) {
+        ti_diff.emplace_back(max(ti_diff[i].start, start),
+                             min(ti_diff[i].end, end), ti_diff[i].k_level + 1);
+        if (ti_diff[i].k_level + 1 > max_booking_factor)
+          max_booking_factor = ti_diff[i].k_level + 1;
+        ti_diff.emplace_back(min(start, ti_diff[i].start),
+                             max(start, ti_diff[i].start), 1);
+        ti_diff.emplace_back(min(end, ti_diff[i].end), max(end, ti_diff[i].end),
+                             1);
+        ti_diff.erase(begin(ti_diff) + i);
+        inserted = true;
       }
     }
 
-    /*
-    if ((start_time <= time_intervals[i].start && end_time >
-    time_intervals[i].start) || (start_time < time_intervals[i].end && end_time
-    > time_intervals[i].start)) { already_visited[i] = 1;
-      find_max_booking_level_for_specified_time_interval(
-          last_index, max(start_time, time_intervals[i].start),
-          min(end_time, time_intervals[i].end), already_visited,
-          max_booking_factor, count + 1);
-      already_visited[i] = 0;
-    }
-    */
-    // }
+    if (!inserted)
+      ti_diff.emplace_back(start, end, 1);
 
     max_booking_level = max_booking_factor > max_booking_level
                             ? max_booking_factor
@@ -175,14 +164,107 @@ int main() {
        << '\n';  // returns 3
   cout << "calendar_tree2.book(14, 29) -> " << calendar_tree2.book(14, 29)
        << '\n';  // returns 3
-  cout << "calendar_tree2.book(14, 29) -> " << calendar_tree2.book(3, 19)
+  cout << "calendar_tree2.book(3, 19) -> " << calendar_tree2.book(3, 19)
        << '\n';  // returns 3
-  cout << "calendar_tree2.book(14, 29) -> " << calendar_tree2.book(3, 14)
+  cout << "calendar_tree2.book(3, 14) -> " << calendar_tree2.book(3, 14)
        << '\n';  // returns 3
-  cout << "calendar_tree2.book(14, 29) -> " << calendar_tree2.book(25, 39)
+  cout << "calendar_tree2.book(25, 39) -> " << calendar_tree2.book(25, 39)
        << '\n';  // returns 4
-  cout << "calendar_tree2.book(14, 29) -> " << calendar_tree2.book(6, 19)
+  cout << "calendar_tree2.book(6, 19) -> " << calendar_tree2.book(6, 19)
        << '\n';  // returns 4
+
+  cout << '\n';
+
+  MyCalendarThree calendar_tree3{};
+  cout << "calendar_tree3.book(47,50) -> " << calendar_tree3.book(47, 50)
+       << '\n';  // returns 1
+  cout << "calendar_tree3.book(1,10) -> " << calendar_tree3.book(1, 10)
+       << '\n';  // returns 1
+  cout << "calendar_tree3.book(27,36) -> " << calendar_tree3.book(27, 36)
+       << '\n';  // returns 1
+  cout << "calendar_tree3.book(40,47) -> " << calendar_tree3.book(40, 47)
+       << '\n';  // returns 1
+  cout << "calendar_tree3.book(20,27) -> " << calendar_tree3.book(20, 27)
+       << '\n';  // returns 1
+  cout << "calendar_tree3.book(15,23) -> " << calendar_tree3.book(15, 23)
+       << '\n';  // returns 2
+  cout << "calendar_tree3.book(10,18) -> " << calendar_tree3.book(10, 18)
+       << '\n';  // returns 2
+  cout << "calendar_tree3.book(27,36) -> " << calendar_tree3.book(27, 36)
+       << '\n';  // returns 2
+  cout << "calendar_tree3.book(17,25) -> " << calendar_tree3.book(17, 25)
+       << '\n';  // returns 3
+  cout << "calendar_tree3.book(8,17) -> " << calendar_tree3.book(8, 17)
+       << '\n';  // returns 3
+  cout << "calendar_tree3.book(24,33) -> " << calendar_tree3.book(24, 33)
+       << '\n';  // returns 3
+  cout << "calendar_tree3.book(23,28) -> " << calendar_tree3.book(23, 28)
+       << '\n';  // returns 4
+  cout << "calendar_tree3.book(21,27) -> " << calendar_tree3.book(21, 27)
+       << '\n';  // returns 5
+  cout << "calendar_tree3.book(47,50) -> " << calendar_tree3.book(47, 50)
+       << '\n';  // returns 5
+  cout << "calendar_tree3.book(14,21) -> " << calendar_tree3.book(14, 21)
+       << '\n';  // returns 5
+  cout << "calendar_tree3.book(26,32) -> " << calendar_tree3.book(26, 32)
+       << '\n';  // returns 5
+  cout << "calendar_tree3.book(16,21) -> " << calendar_tree3.book(16, 21)
+       << '\n';  // returns 5
+  cout << "calendar_tree3.book(2,7) -> " << calendar_tree3.book(2, 7)
+       << '\n';  // returns 5
+  cout << "calendar_tree3.book(24,33) -> " << calendar_tree3.book(24, 33)
+       << '\n';  // returns 6
+  cout << "calendar_tree3.book(6,13) -> " << calendar_tree3.book(6, 13)
+       << '\n';  // returns 6
+  cout << "calendar_tree3.book(44,50) -> " << calendar_tree3.book(44, 50)
+       << '\n';  // returns 6
+  cout << "calendar_tree3.book(33,39) -> " << calendar_tree3.book(33, 39)
+       << '\n';  // returns 6
+  cout << "calendar_tree3.book(30,36) -> " << calendar_tree3.book(30, 36)
+       << '\n';  // returns 6
+  cout << "calendar_tree3.book(6,15) -> " << calendar_tree3.book(6, 15)
+       << '\n';  // returns 6
+  cout << "calendar_tree3.book(21,27) -> " << calendar_tree3.book(21, 27)
+       << '\n';  // returns 7
+  cout << "calendar_tree3.book(49,50) -> " << calendar_tree3.book(49, 50)
+       << '\n';  // returns 7
+  cout << "calendar_tree3.book(38,45) -> " << calendar_tree3.book(38, 45)
+       << '\n';  // returns 7
+  cout << "calendar_tree3.book(4,12) -> " << calendar_tree3.book(4, 12)
+       << '\n';  // returns 7
+  cout << "calendar_tree3.book(46,50) -> " << calendar_tree3.book(46, 50)
+       << '\n';  // returns 7
+  cout << "calendar_tree3.book(13,21) -> " << calendar_tree3.book(13, 21)
+       << '\n';  // returns 7
+
+  cout << '\n';
+
+  MyCalendarThree calendar_tree4{};
+  cout << "calendar_tree4.book(8,23) -> " << calendar_tree4.book(8, 23)
+       << '\n';  // returns 1
+  cout << "calendar_tree4.book(35,48) -> " << calendar_tree4.book(35, 48)
+       << '\n';  // returns 1
+  cout << "calendar_tree4.book(24,39) -> " << calendar_tree4.book(24, 39)
+       << '\n';  // returns 2
+  cout << "calendar_tree4.book(10,22) -> " << calendar_tree4.book(10, 22)
+       << '\n';  // returns 2
+  cout << "calendar_tree4.book(10,23) -> " << calendar_tree4.book(10, 23)
+       << '\n';  // returns 3
+  cout << "calendar_tree4.book(8,22) -> " << calendar_tree4.book(8, 22)
+       << '\n';  // returns 4
+  cout << "calendar_tree4.book(1,14) -> " << calendar_tree4.book(1, 14)
+       << '\n';  // returns 5
+  cout << "calendar_tree4.book(36,50) -> " << calendar_tree4.book(36, 50)
+       << '\n';  // returns 5
+  cout << "calendar_tree4.book(42,50) -> " << calendar_tree4.book(42, 50)
+       << '\n';  // returns 5
+  cout << "calendar_tree4.book(42,50) -> " << calendar_tree4.book(42, 50)
+       << '\n';  // returns 5
+                 /*
+                 ["MyCalendarThree","book","book","book","book","book","book","book","book","book","book"]
+                 [[],[8,23],[35,48],[24,39],[10,22],[10,23],[8,22],[1,14],[36,50],[42,50],[42,50]]
+                 Expected: [null,1,1,2,2,3,4,5,5,5,5]
+                 */
 
   return 0;
 }
