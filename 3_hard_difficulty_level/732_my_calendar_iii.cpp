@@ -107,13 +107,11 @@ class MyCalendarThree {
           (start < ti_diff[i].end && end >= ti_diff[i].end)) {
         ti_diff.emplace_back(max(ti_diff[i].start, start),
                              min(ti_diff[i].end, end), ti_diff[i].k_level + 1);
-        if (ti_diff[i].k_level + 1 > max_booking_factor)
-          max_booking_factor = ti_diff[i].k_level + 1;
-        ti_diff.emplace_back(min(start, ti_diff[i].start),
-                             max(start, ti_diff[i].start), 1);
-        ti_diff.emplace_back(min(end, ti_diff[i].end), max(end, ti_diff[i].end),
-                             1);
-        ti_diff.erase(begin(ti_diff) + i);
+        if (ti_diff.back().k_level > max_booking_factor)
+          max_booking_factor = ti_diff.back().k_level;
+        if (start != ti_diff[i].start) ti_diff.emplace_back(min(start, ti_diff[i].start), max(start, ti_diff[i].start), 1);
+        if (end != ti_diff[i].end) ti_diff.emplace_back(min(end, ti_diff[i].end), max(end, ti_diff[i].end), 1);
+        // ti_diff.erase(begin(ti_diff) + i);
         inserted = true;
       }
     }
