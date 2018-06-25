@@ -2,27 +2,27 @@
 Implement a MyCalendarThree class to store your events. A new event can always
 be added.
 
-Your class will have one method, book(int start, int end). Formally, this
+Your class will have one method, book2(int start, int end). Formally, this
 represents a booking on the half open interval [start, end), the range of real
 numbers x such that start <= x < end.
 
 A K-booking happens when K events have some non-empty intersection (ie., there
 is some time that is common to all K events.)
 
-For each call to the method MyCalendar.book, return an integer K representing
+For each call to the method MyCalendar.book2, return an integer K representing
 the largest integer such that there exists a K-booking in the calendar. Your
 class will be called like this: MyCalendarThree cal = new MyCalendarThree();
-MyCalendarThree.book(start, end)
+MyCalendarThree.book2(start, end)
 
 Example 1:
 
 MyCalendarThree();
-MyCalendarThree.book(10, 20); // returns 1
-MyCalendarThree.book(50, 60); // returns 1
-MyCalendarThree.book(10, 40); // returns 2
-MyCalendarThree.book(5, 15); // returns 3
-MyCalendarThree.book(5, 10); // returns 3
-MyCalendarThree.book(25, 55); // returns 3
+MyCalendarThree.book2(10, 20); // returns 1
+MyCalendarThree.book2(50, 60); // returns 1
+MyCalendarThree.book2(10, 40); // returns 2
+MyCalendarThree.book2(5, 15); // returns 3
+MyCalendarThree.book2(5, 10); // returns 3
+MyCalendarThree.book2(25, 55); // returns 3
 Explanation:
 The first two events can be booked and are disjoint, so the maximum K-booking is
 a 1-booking. The third event [10, 40) intersects the first event, and the
@@ -32,8 +32,8 @@ K-booking to be only a 3-booking. Note that the last event locally causes a
 are still triple booked.
 
 Note:
-The number of calls to MyCalendarThree.book per test case will be at most 400.
-In calls to MyCalendarThree.book(start, end), start and end are integers in the
+The number of calls to MyCalendarThree.book2 per test case will be at most 400.
+In calls to MyCalendarThree.book2(start, end), start and end are integers in the
 range [0, 10^9].
 */
 
@@ -103,30 +103,7 @@ ostream& operator<<(ostream& os, const map<pair<int, int>, int>& data) {
 class MyCalendarThree {
   int max_booking_level{};
   map<pair<int, int>, int> ti_diff{};
-  unordered_set<string> skip_ti{};
   vector<pair<int, int>> time_intervals{};
-
-  static string generate_hash_index_value(int start_time, int end_time) {
-    string index{};
-    index.reserve(32);
-
-    index.clear();
-    while (start_time) {
-      index.insert(0, 1, start_time % 10 + '0');
-      start_time /= 10;
-    }
-
-    index.push_back('-');
-
-    const size_t next_start_pos{index.length()};
-
-    while (end_time) {
-      index.insert(next_start_pos, 1, end_time % 10 + '0');
-      end_time /= 10;
-    }
-
-    return index;
-  }
 
   void find_max_booking_factor(const size_t ti_size,
                                const int start_time,
@@ -140,8 +117,13 @@ class MyCalendarThree {
     for (size_t i{}; i < ti_size; i++) {
       if (visited_indices.count(i))
         continue;
-      if (end_time < time_intervals[i].first)
+
+      if (end_time <= time_intervals[i].first)
         return;
+
+      if (start_time >= time_intervals[i].second)
+        continue;
+
       visited_indices.insert(i);
       const int intersect_start{max(start_time, time_intervals[i].first)};
       const int intersect_end{min(end_time, time_intervals[i].second)};
@@ -157,124 +139,50 @@ class MyCalendarThree {
   }
 
  public:
-  MyCalendarThree() { time_intervals.reserve(400); };
+  MyCalendarThree() = default;
 
   int book(const int start_time, const int end_time) {
-    // static size_t iter{};
-
     if (ti_diff.empty()) {
-      ti_diff.insert(make_pair(make_pair(start_time, end_time), 1));
+      const pair<int, int> key{make_pair(start_time, end_time)};
+      ti_diff.insert(make_pair(key, 1));
       max_booking_level = 1;
-      // ++iter;
-      // cout << ti_diff << '\n';
-      // _getch();
       return 1;
     }
 
-    skip_ti.clear();
-    int max_booking_factor{1};
-    bool inserted{};
+    const pair<int, int> key{make_pair(start_time, end_time)};
+    ti_diff[key]++;
 
-    for (auto& p : ti_diff) {
-      if (skip_ti.find(generate_hash_index_value(
-              p.first.first, p.first.second)) != end(skip_ti))
-        continue;
+    for (const auto& f : ti_diff) {
+      int max_booking_factor{f.second};
+      pair<int, int> prev_intersection{
+          make_pair(f.first.first, f.first.second)};
 
-      if (start_time == p.first.first && end_time == p.first.second) {
-        p.second++;
-        if (p.second > max_booking_factor)
-          max_booking_factor = p.second;
-        skip_ti.insert(generate_hash_index_value(start_time, end_time));
-        inserted = true;
-        continue;
+      for (const auto& s : ti_diff) {
+        if (f == s)
+          continue;
+
+        if (s.first.second <= prev_intersection.first)
+          continue;
+
+        if (s.first.first >= prev_intersection.second)
+          break;
+
+        const pair<int, int> next_intersection{
+            make_pair(max(prev_intersection.first, s.first.first),
+                      min(prev_intersection.second, s.first.second))};
+
+        if (next_intersection.first >= next_intersection.second)
+          continue;
+
+        prev_intersection = next_intersection;
+
+        max_booking_factor += s.second;  // increase max_booking_factor by count
+                                         // of identical time intervals
       }
 
-      if (start_time < p.first.first && end_time > p.first.second) {
-        p.second++;
-        if (p.second > max_booking_factor)
-          max_booking_factor = p.second;
-
-        const pair<int, int> lower_time_interval_diff{
-            make_pair(start_time, p.first.first)};
-
-        ti_diff[lower_time_interval_diff]++;
-        if (ti_diff[lower_time_interval_diff] > max_booking_factor)
-          max_booking_factor = ti_diff[lower_time_interval_diff];
-
-        skip_ti.insert(generate_hash_index_value(
-            lower_time_interval_diff.first, lower_time_interval_diff.second));
-
-        const pair<int, int> upper_time_interval_diff{
-            make_pair(p.first.second, end_time)};
-
-        ti_diff[upper_time_interval_diff]++;
-        if (ti_diff[upper_time_interval_diff] > max_booking_factor)
-          max_booking_factor = ti_diff[upper_time_interval_diff];
-        skip_ti.insert(generate_hash_index_value(
-            upper_time_interval_diff.first, upper_time_interval_diff.second));
-
-        inserted = true;
-        continue;
-      }
-
-      if ((start_time <= p.first.first && end_time > p.first.first) ||
-          (start_time < p.first.second && end_time >= p.first.second)) {
-        const pair<int, int> key{make_pair(max(p.first.first, start_time),
-                                           min(p.first.second, end_time))};
-        ti_diff[key] = p.second + 1;
-
-        if (ti_diff[key] > max_booking_factor) {
-          max_booking_factor = ti_diff[key];
-        }
-
-        skip_ti.insert(generate_hash_index_value(key.first, key.second));
-
-        if (start_time != p.first.first) {
-          const pair<int, int> lower_time_interval_diff{make_pair(
-              min(start_time, p.first.first), max(start_time, p.first.first))};
-
-          if (start_time < p.first.first ||
-              ti_diff.find(lower_time_interval_diff) != end(ti_diff))
-            ti_diff[lower_time_interval_diff]++;
-          else if (ti_diff.find(lower_time_interval_diff) == end(ti_diff))
-            ti_diff.insert(make_pair(lower_time_interval_diff, p.second));
-          if (ti_diff[lower_time_interval_diff] > max_booking_factor)
-            max_booking_factor = ti_diff[lower_time_interval_diff];
-
-          skip_ti.insert(generate_hash_index_value(
-              lower_time_interval_diff.first, lower_time_interval_diff.second));
-        }
-
-        if (end_time != p.first.second) {
-          const pair<int, int> upper_time_interval_diff{make_pair(
-              min(end_time, p.first.second), max(end_time, p.first.second))};
-          if (end_time > p.first.second ||
-              ti_diff.find(upper_time_interval_diff) != end(ti_diff))
-            ti_diff[upper_time_interval_diff]++;
-          else if (ti_diff.find(upper_time_interval_diff) == end(ti_diff))
-            ti_diff.insert(make_pair(upper_time_interval_diff, p.second));
-          if (ti_diff[upper_time_interval_diff] > max_booking_factor)
-            max_booking_factor = ti_diff[upper_time_interval_diff];
-
-          skip_ti.insert(generate_hash_index_value(
-              upper_time_interval_diff.first, upper_time_interval_diff.second));
-          ti_diff.erase(p.first);
-        }
-
-        // inserted = true;
-      }
+      if (max_booking_factor > max_booking_level)
+        max_booking_level = max_booking_factor;
     }
-
-    if (!inserted)
-      ti_diff[make_pair(start_time, end_time)]++;
-
-    max_booking_level = max_booking_factor > max_booking_level
-                            ? max_booking_factor
-                            : max_booking_level;
-
-    // ++iter;
-    // cout << ti_diff << '\n';    
-    //_getch();
 
     return max_booking_level;
   }
@@ -288,8 +196,8 @@ class MyCalendarThree {
 
     const size_t ti_size{time_intervals.size()};
     if (1 == ti_size) {
-      if (end_time < time_intervals[0].first ||
-          start_time > time_intervals[0].second) {
+      if (end_time <= time_intervals.front().first ||
+          start_time >= time_intervals.front().second) {
         time_intervals.emplace_back(make_pair(start_time, end_time));
         return 1;
       }
@@ -303,9 +211,13 @@ class MyCalendarThree {
     sort(begin(time_intervals), end(time_intervals));
     int max_booking_factor{max_booking_level};
     unordered_set<size_t> visited_indices{};
-    find_max_booking_factor(ti_size, time_intervals[0].first,
-                            time_intervals[0].second, visited_indices,
-                            max_booking_factor);
+    for (size_t i{}; i < ti_size; i++) {
+      visited_indices.insert(i);
+      find_max_booking_factor(ti_size, time_intervals[i].first,
+                              time_intervals[i].second, visited_indices,
+                              max_booking_factor);
+      visited_indices.erase(i);
+    }
 
     max_booking_level = max_booking_factor > max_booking_level
                             ? max_booking_factor
