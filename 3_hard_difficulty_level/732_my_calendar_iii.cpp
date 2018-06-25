@@ -37,8 +37,12 @@ In calls to MyCalendarThree.book(start, end), start and end are integers in the
 range [0, 10^9].
 */
 
+// #include <conio.h>
 #include <algorithm>
 #include <iostream>
+#include <map>
+#include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -50,78 +54,263 @@ static int sres = []() {
   return 0;
 }();
 
+/*
 struct TimeInterval {
-  int start;
-  int end;
-  int k_level;
+        int start_;
+        int end_;
+        int k_level_;
 
-  explicit TimeInterval(const int start_time, const int end_time, const int kl)
-      : start{start_time}, end{end_time}, k_level{kl} {}
+        explicit TimeInterval(const int start_time,
+                const int end_time,
+                const int k_level)
+                : start_{ start_time }, end_{ end_time }, k_level_{ k_level } {}
 };
+*/
+
+ostream& operator<<(ostream& os, const map<pair<int, int>, int>& data) {
+  if (data.empty()) {
+    os << "data is empty\n";
+    return os;
+  }
+  os << '\n';
+  for (const auto& p : data)
+    os << '[' << p.first.first << ',' << p.first.second << "]:" << p.second
+       << ", ";
+
+  return os;
+}
+
+// namespace std {
+//	template <>
+//	struct less<pair<int, int>>
+//	{
+//		pair<int, int> p_;
+//
+//		explicit less(const pair<int, int>& p) : p_{p} noexcept { }
+//
+//		bool operator<(const pair<int, int>& p) const
+//		noexcept
+//		{
+//			if (p.first < p_.first)
+//				return true;
+//			if (p.first == p_.first && p.second < p_.second)
+//			    return true;
+//			return false;
+//		}
+//	};
+//}
 
 class MyCalendarThree {
   int max_booking_level{};
-  vector<TimeInterval> ti_diff{};
+  map<pair<int, int>, int> ti_diff{};
+  unordered_set<string> skip_ti{};
+  vector<pair<int, int>> time_intervals{};
+
+  static string generate_hash_index_value(int start_time, int end_time) {
+    string index{};
+    index.reserve(32);
+
+    index.clear();
+    while (start_time) {
+      index.insert(0, 1, start_time % 10 + '0');
+      start_time /= 10;
+    }
+
+    index.push_back('-');
+
+    const size_t next_start_pos{index.length()};
+
+    while (end_time) {
+      index.insert(next_start_pos, 1, end_time % 10 + '0');
+      end_time /= 10;
+    }
+
+    return index;
+  }
+
+  void find_max_booking_factor(const size_t ti_size,
+                               const int start_time,
+                               const int end_time,
+                               unordered_set<size_t>& visited_indices,
+                               int& max_booking_factor,
+                               const int iter_count = 1) {
+    if (iter_count > max_booking_factor)
+      max_booking_factor = iter_count;
+
+    for (size_t i{}; i < ti_size; i++) {
+      if (visited_indices.count(i))
+        continue;
+      if (end_time < time_intervals[i].first)
+        return;
+      visited_indices.insert(i);
+      const int intersect_start{max(start_time, time_intervals[i].first)};
+      const int intersect_end{min(end_time, time_intervals[i].second)};
+      if (intersect_start >= intersect_end) {
+        visited_indices.erase(i);
+        continue;
+      }
+      find_max_booking_factor(ti_size, intersect_start, intersect_end,
+                              visited_indices, max_booking_factor,
+                              iter_count + 1);
+      visited_indices.erase(i);
+    }
+  }
 
  public:
-  MyCalendarThree() { ti_diff.reserve(1024); }
+  MyCalendarThree() { time_intervals.reserve(400); };
 
-  // [8,23],[35,48],[24,39],[10,22],[10,23],[8,22],[1,14],[36,50],[42,50],[42,50]
+  int book(const int start_time, const int end_time) {
+    // static size_t iter{};
 
-  // 1. [8,23] -> 1
-  // 2. [35,48]:1 -> 1
-  // 3. [8,23]:1, [24,35]:1, [35,39]:2, [39,48]:1
-
-  int book(const int start, const int end) {
     if (ti_diff.empty()) {
-      ti_diff.emplace_back(start, end, 1);
+      ti_diff.insert(make_pair(make_pair(start_time, end_time), 1));
       max_booking_level = 1;
+      // ++iter;
+      // cout << ti_diff << '\n';
+      // _getch();
       return 1;
     }
 
+    skip_ti.clear();
     int max_booking_factor{1};
     bool inserted{};
 
-    const size_t ti_diff_size{ti_diff.size()};
+    for (auto& p : ti_diff) {
+      if (skip_ti.find(generate_hash_index_value(
+              p.first.first, p.first.second)) != end(skip_ti))
+        continue;
 
-    for (size_t i{}; i < ti_diff_size; i++) {
-      if (start == ti_diff[i].start && end == ti_diff[i].end) {
-        ti_diff[i].k_level++;
-        if (ti_diff[i].k_level > max_booking_factor)
-          max_booking_factor = ti_diff[i].k_level;
+      if (start_time == p.first.first && end_time == p.first.second) {
+        p.second++;
+        if (p.second > max_booking_factor)
+          max_booking_factor = p.second;
+        skip_ti.insert(generate_hash_index_value(start_time, end_time));
         inserted = true;
         continue;
       }
 
-      if (start < ti_diff[i].start && end > ti_diff[i].end) {
-        ti_diff[i].k_level++;
-        if (ti_diff[i].k_level > max_booking_factor)
-          max_booking_factor = ti_diff[i].k_level;
-        ti_diff.emplace_back(start, ti_diff[i].start, 1);
-        ti_diff.emplace_back(ti_diff[i].end, end, 1);
+      if (start_time < p.first.first && end_time > p.first.second) {
+        p.second++;
+        if (p.second > max_booking_factor)
+          max_booking_factor = p.second;
+
+        const pair<int, int> lower_time_interval_diff{
+            make_pair(start_time, p.first.first)};
+
+        ti_diff[lower_time_interval_diff]++;
+        if (ti_diff[lower_time_interval_diff] > max_booking_factor)
+          max_booking_factor = ti_diff[lower_time_interval_diff];
+
+        skip_ti.insert(generate_hash_index_value(
+            lower_time_interval_diff.first, lower_time_interval_diff.second));
+
+        const pair<int, int> upper_time_interval_diff{
+            make_pair(p.first.second, end_time)};
+
+        ti_diff[upper_time_interval_diff]++;
+        if (ti_diff[upper_time_interval_diff] > max_booking_factor)
+          max_booking_factor = ti_diff[upper_time_interval_diff];
+        skip_ti.insert(generate_hash_index_value(
+            upper_time_interval_diff.first, upper_time_interval_diff.second));
+
         inserted = true;
         continue;
       }
 
-      if ((start <= ti_diff[i].start && end > ti_diff[i].start) ||
-          (start < ti_diff[i].end && end >= ti_diff[i].end)) {
-        ti_diff.emplace_back(max(ti_diff[i].start, start),
-                             min(ti_diff[i].end, end), ti_diff[i].k_level + 1);
-        if (ti_diff.back().k_level > max_booking_factor)
-          max_booking_factor = ti_diff.back().k_level;
-        if (start != ti_diff[i].start) ti_diff.emplace_back(min(start, ti_diff[i].start), max(start, ti_diff[i].start), 1);
-        if (end != ti_diff[i].end) ti_diff.emplace_back(min(end, ti_diff[i].end), max(end, ti_diff[i].end), 1);
-        // ti_diff.erase(begin(ti_diff) + i);
-        inserted = true;
+      if ((start_time <= p.first.first && end_time > p.first.first) ||
+          (start_time < p.first.second && end_time >= p.first.second)) {
+        const pair<int, int> key{make_pair(max(p.first.first, start_time),
+                                           min(p.first.second, end_time))};
+        ti_diff[key] = p.second + 1;
+
+        if (ti_diff[key] > max_booking_factor) {
+          max_booking_factor = ti_diff[key];
+        }
+
+        skip_ti.insert(generate_hash_index_value(key.first, key.second));
+
+        if (start_time != p.first.first) {
+          const pair<int, int> lower_time_interval_diff{make_pair(
+              min(start_time, p.first.first), max(start_time, p.first.first))};
+
+          if (start_time < p.first.first ||
+              ti_diff.find(lower_time_interval_diff) != end(ti_diff))
+            ti_diff[lower_time_interval_diff]++;
+          else if (ti_diff.find(lower_time_interval_diff) == end(ti_diff))
+            ti_diff.insert(make_pair(lower_time_interval_diff, p.second));
+          if (ti_diff[lower_time_interval_diff] > max_booking_factor)
+            max_booking_factor = ti_diff[lower_time_interval_diff];
+
+          skip_ti.insert(generate_hash_index_value(
+              lower_time_interval_diff.first, lower_time_interval_diff.second));
+        }
+
+        if (end_time != p.first.second) {
+          const pair<int, int> upper_time_interval_diff{make_pair(
+              min(end_time, p.first.second), max(end_time, p.first.second))};
+          if (end_time > p.first.second ||
+              ti_diff.find(upper_time_interval_diff) != end(ti_diff))
+            ti_diff[upper_time_interval_diff]++;
+          else if (ti_diff.find(upper_time_interval_diff) == end(ti_diff))
+            ti_diff.insert(make_pair(upper_time_interval_diff, p.second));
+          if (ti_diff[upper_time_interval_diff] > max_booking_factor)
+            max_booking_factor = ti_diff[upper_time_interval_diff];
+
+          skip_ti.insert(generate_hash_index_value(
+              upper_time_interval_diff.first, upper_time_interval_diff.second));
+          ti_diff.erase(p.first);
+        }
+
+        // inserted = true;
       }
     }
 
     if (!inserted)
-      ti_diff.emplace_back(start, end, 1);
+      ti_diff[make_pair(start_time, end_time)]++;
 
     max_booking_level = max_booking_factor > max_booking_level
                             ? max_booking_factor
                             : max_booking_level;
+
+    // ++iter;
+    // cout << ti_diff << '\n';    
+    //_getch();
+
+    return max_booking_level;
+  }
+
+  int book2(const int start_time, const int end_time) {
+    if (time_intervals.empty()) {
+      time_intervals.emplace_back(make_pair(start_time, end_time));
+      max_booking_level = 1;
+      return 1;
+    }
+
+    const size_t ti_size{time_intervals.size()};
+    if (1 == ti_size) {
+      if (end_time < time_intervals[0].first ||
+          start_time > time_intervals[0].second) {
+        time_intervals.emplace_back(make_pair(start_time, end_time));
+        return 1;
+      }
+
+      time_intervals.emplace_back(make_pair(start_time, end_time));
+      max_booking_level = 2;
+      return 2;
+    }
+
+    time_intervals.emplace_back(make_pair(start_time, end_time));
+    sort(begin(time_intervals), end(time_intervals));
+    int max_booking_factor{max_booking_level};
+    unordered_set<size_t> visited_indices{};
+    find_max_booking_factor(ti_size, time_intervals[0].first,
+                            time_intervals[0].second, visited_indices,
+                            max_booking_factor);
+
+    max_booking_level = max_booking_factor > max_booking_level
+                            ? max_booking_factor
+                            : max_booking_level;
+
     return max_booking_level;
   }
 };
@@ -258,11 +447,6 @@ int main() {
        << '\n';  // returns 5
   cout << "calendar_tree4.book(42,50) -> " << calendar_tree4.book(42, 50)
        << '\n';  // returns 5
-                 /*
-                 ["MyCalendarThree","book","book","book","book","book","book","book","book","book","book"]
-                 [[],[8,23],[35,48],[24,39],[10,22],[10,23],[8,22],[1,14],[36,50],[42,50],[42,50]]
-                 Expected: [null,1,1,2,2,3,4,5,5,5,5]
-                 */
 
   return 0;
 }
