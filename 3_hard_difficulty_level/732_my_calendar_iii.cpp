@@ -37,8 +37,6 @@ In calls to MyCalendarThree.book2(start, end), start and end are integers in the
 range [0, 10^9].
 */
 
-// #include <conio.h>
-#include <stl_helper_functions.h>
 #include <algorithm>
 #include <iostream>
 #include <string>
@@ -207,7 +205,6 @@ class MyCalendarThree {
  */
 
 int main() {
-  experimental::unused_args(sres);
   MyCalendarThree calendar_tree1{};
   cout << "calendar_tree1.book(10, 20) -> " << calendar_tree1.book(10, 20)
        << '\n';  // returns 1
