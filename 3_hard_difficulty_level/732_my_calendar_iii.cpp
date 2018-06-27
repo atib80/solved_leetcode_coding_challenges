@@ -52,18 +52,16 @@ static int sres = []() {
   return 0;
 }();
 
-template <typename ForwardIter, typename T, typename Func>
-void split(ForwardIter first, ForwardIter last, const T& value, Func f) {
-  if (first == last)
-    return;
-  while (true) {
-    const ForwardIter found{find(first, last, value)};
-    f(first, found);
-    if (found == last)
-      break;
-    first = ++found;
+// namespace std {
+template <>
+struct hash<pair<int, int>> {
+  uint64_t operator()(const pair<int, int>& p) const {
+    const uint64_t hash_index{(static_cast<uint64_t>(p.first) << 32) +
+                              static_cast<uint64_t>(p.second)};
+    return hash_index;
   }
-}
+};
+// } // namespace std
 
 struct TimeInterval {
   int start;
@@ -73,29 +71,6 @@ struct TimeInterval {
   explicit TimeInterval(const int start_time, const int end_time, const int kl)
       : start{start_time}, end{end_time}, k_level{kl} {}
 };
-
-ostream& operator<<(ostream& os, const vector<TimeInterval>& data) {
-  if (data.empty()) {
-    os << "data is empty\n";
-    return os;
-  }
-  os << '\n';
-  for (const TimeInterval& ti : data)
-    os << '[' << ti.start << ',' << ti.end << "]:" << ti.k_level << ", ";
-
-  return os;
-}
-
-namespace std {
-template <>
-struct hash<pair<int, int>> {
-  uint64_t operator()(const pair<int, int>& p) const {
-    const uint64_t hash_index{(static_cast<uint64_t>(p.first) << 32) +
-                              static_cast<uint64_t>(p.second)};
-    return hash_index;
-  }
-};
-}  // namespace std
 
 class MyCalendarThree {
   int max_booking_level{};
@@ -197,12 +172,6 @@ class MyCalendarThree {
     return max_booking_level;
   }
 };
-
-/**
- * Your MyCalendarThree object will be instantiated and called as such:
- * MyCalendarThree obj = new MyCalendarThree();
- * int param_1 = obj.book(start,end);
- */
 
 int main() {
   MyCalendarThree calendar_tree1{};
