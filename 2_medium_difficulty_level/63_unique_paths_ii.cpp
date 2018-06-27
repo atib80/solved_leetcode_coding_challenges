@@ -1,4 +1,6 @@
 /*
+63. Leetcode coding challenge: Unique paths II
+
 A robot is located at the top-left corner of a m x n grid (marked 'Start' in the
 diagram below).
 
@@ -23,6 +25,7 @@ Input:
 ]
 
 Output: 2
+
 Explanation:
 There is one obstacle in the middle of the 3x3 grid above.
 There are two ways to reach the bottom-right corner:
@@ -31,6 +34,7 @@ There are two ways to reach the bottom-right corner:
 */
 
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
 #include <vector>
 
@@ -43,35 +47,13 @@ static int sres = []() {
 }();
 
 class Solution {
-  bool find_max_unique_paths(vector<vector<int>>& obstacleGrid,
-                             const size_t last_x,
-                             const size_t last_y,
-                             const size_t x,
-                             const size_t y,
-                             size_t& unique_paths) {
-    if (x == last_x && y == last_y)
-      return true;
-
-    obstacleGrid[x][y] = -1;
-    if (y < last_y && !obstacleGrid[x][y + 1] &&
-        find_max_unique_paths(obstacleGrid, last_x, last_y, x, y + 1,
-                              unique_paths))
-      unique_paths++;
-    if (x < last_x && !obstacleGrid[x + 1][y] &&
-        find_max_unique_paths(obstacleGrid, last_x, last_y, x + 1, y,
-                              unique_paths))
-      unique_paths++;
-    obstacleGrid[x][y] = 0;
-
-    return false;
-  }
-
  public:
-  int uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
+  uint64_t uniquePathsWithObstacles(vector<vector<int>>& obstacleGrid) {
     const size_t m{obstacleGrid.size()};
+
     if (!m)
       return 0;
-    if (obstacleGrid[0][0])
+    if (obstacleGrid.front().front() || obstacleGrid.back().back())
       return 0;
     if (1 == m) {
       if (end(obstacleGrid[0]) !=
@@ -88,9 +70,35 @@ class Solution {
       return 1;
     }
 
-    size_t unique_paths{};
-    find_max_unique_paths(obstacleGrid, m - 1, n - 1, 0, 0, unique_paths);
-    return unique_paths;
+    vector<vector<uint64_t>> dp(m, vector<uint64_t>(n, 0));
+    dp[0][0] = 1;
+
+    for (size_t y{1}; y < n; y++) {
+      if (1 == obstacleGrid[0][y])
+        dp[0][y] = 0;
+      else
+        dp[0][y] = dp[0][y - 1];
+    }
+
+    for (size_t x{1}; x < m; x++) {
+      if (1 == obstacleGrid[x][0])
+        dp[x][0] = 0;
+      else
+        dp[x][0] = dp[x - 1][0];
+    }
+
+    for (size_t i{1}; i < m; i++) {
+      for (size_t j{1}; j < n; j++) {
+        uint64_t c{};
+        if (!obstacleGrid[i - 1][j])
+          c += dp[i - 1][j];
+        if (!obstacleGrid[i][j - 1])
+          c += dp[i][j - 1];
+        dp[i][j] = c;
+      }
+    }
+
+    return dp[m - 1][n - 1];
   }
 };
 
@@ -146,5 +154,10 @@ int main() {
                               1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0}};
   cout << "s.uniquePathsWithObstacles(input2) -> "
        << s.uniquePathsWithObstacles(input2) << '\n';  // expected output: 2
+
+  vector<vector<int>> input3{{0, 0}, {1, 1}, {0, 0}};
+  cout << "s.uniquePathsWithObstacles(input3) -> "
+       << s.uniquePathsWithObstacles(input3) << '\n';  // expected output: 0
+
   return 0;
 }
