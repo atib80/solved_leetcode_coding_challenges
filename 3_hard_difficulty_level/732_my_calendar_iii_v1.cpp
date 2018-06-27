@@ -38,6 +38,7 @@ range [0, 10^9].
 */
 
 // #include <conio.h>
+#include <stl_helper_functions.h>
 #include <algorithm>
 #include <iostream>
 #include <string>
@@ -101,6 +102,7 @@ struct hash<pair<int, int>> {
 class MyCalendarThree {
   int max_booking_level{};
   vector<TimeInterval> time_intervals{};
+  vector<TimeInterval> precalculated_k_levels{};
   unordered_set<pair<int, int>> visited_intersections{};
 
  public:
@@ -110,36 +112,50 @@ class MyCalendarThree {
     if (time_intervals.empty()) {
       time_intervals.emplace_back(start_time, end_time, 1);
       max_booking_level = 1;
-      //      cout << time_intervals << '\n';
-      //      _getch();
       return 1;
     }
-
+    const TimeInterval ti{start_time, end_time, 1};
     bool inserted{};
 
-    if (start_time > time_intervals.back().start) {
+    auto lb = lower_bound(begin(time_intervals), end(time_intervals), ti,
+                          [](const TimeInterval& lti, const TimeInterval& rti) {
+                            return lti.start < rti.start;
+                          });
+
+    if (end(time_intervals) == lb) {
       time_intervals.emplace_back(start_time, end_time, 1);
       inserted = true;
-    } else {
-      for (size_t i{}; i < time_intervals.size(); i++) {
-        if (start_time == time_intervals[i].start &&
-            end_time == time_intervals[i].end) {
-          time_intervals[i].k_level++;
+    } else if (start_time == lb->start) {
+      while (start_time == lb->start) {
+        if (end_time == lb->end) {
+          lb->k_level++;
           inserted = true;
           break;
         }
-
-        if (start_time < time_intervals[i].start) {
-          time_intervals.emplace(begin(time_intervals) + i, start_time,
-                                 end_time, 1);
-          inserted = true;
-          break;
-        }
+        ++lb;
       }
     }
 
     if (!inserted)
-      time_intervals.emplace_back(start_time, end_time, 1);
+      time_intervals.emplace(lb, start_time, end_time, 1);
+
+    for (int ri = precalculated_k_levels.size() - 1; ri >= 0; ri--) {
+      const pair<int, int> intersection{
+          make_pair(max(start_time, precalculated_k_levels[ri].start),
+                    min(end_time, precalculated_k_levels[ri].end))};
+      if (intersection.first < intersection.second) {
+        const int max_booking_factor{precalculated_k_levels[ri].k_level + 1};
+        if (max_booking_factor > max_booking_level) {
+          max_booking_level = max_booking_factor;
+          precalculated_k_levels.emplace_back(
+              intersection.first, intersection.second, max_booking_factor);
+          return max_booking_level;
+        }
+
+        if (max_booking_factor <= max_booking_level)
+          break;
+      }
+    }
 
     visited_intersections.clear();
 
@@ -173,12 +189,12 @@ class MyCalendarThree {
         max_booking_factor += time_intervals[j].k_level;
       }
 
-      if (max_booking_factor > max_booking_level)
+      if (max_booking_factor >= max_booking_level) {
         max_booking_level = max_booking_factor;
+        precalculated_k_levels.emplace_back(
+            intersection.first, intersection.second, max_booking_factor);
+      }
     }
-
-    //    cout << time_intervals << '\n';
-    //    _getch();
 
     return max_booking_level;
   }
@@ -191,6 +207,7 @@ class MyCalendarThree {
  */
 
 int main() {
+  experimental::unused_args(sres);
   MyCalendarThree calendar_tree1{};
   cout << "calendar_tree1.book(10, 20) -> " << calendar_tree1.book(10, 20)
        << '\n';  // returns 1
