@@ -40,8 +40,8 @@ range [0, 10^9].
 // #include <conio.h>
 #include <algorithm>
 #include <iostream>
+#include <map>
 #include <string>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -53,19 +53,6 @@ static int sres = []() {
   return 0;
 }();
 
-template <typename ForwardIter, typename T, typename Func>
-void split(ForwardIter first, ForwardIter last, const T& value, Func f) {
-  if (first == last)
-    return;
-  while (true) {
-    const ForwardIter found{find(first, last, value)};
-    f(first, found);
-    if (found == last)
-      break;
-    first = ++found;
-  }
-}
-
 struct TimeInterval {
   int start;
   int end;
@@ -75,110 +62,58 @@ struct TimeInterval {
       : start{start_time}, end{end_time}, k_level{kl} {}
 };
 
-ostream& operator<<(ostream& os, const vector<TimeInterval>& data) {
-  if (data.empty()) {
-    os << "data is empty\n";
-    return os;
-  }
-  os << '\n';
-  for (const TimeInterval& ti : data)
-    os << '[' << ti.start << ',' << ti.end << "]:" << ti.k_level << ", ";
-
-  return os;
-}
-
-namespace std {
-template <>
-struct hash<pair<int, int>> {
-  uint64_t operator()(const pair<int, int>& p) const {
-    const uint64_t hash_index{(static_cast<uint64_t>(p.first) << 32) +
-                              static_cast<uint64_t>(p.second)};
-    return hash_index;
-  }
-};
-}  // namespace std
-
 class MyCalendarThree {
   int max_booking_level{};
   vector<TimeInterval> time_intervals{};
-  unordered_set<pair<int, int>> visited_intersections{};
 
  public:
-  MyCalendarThree() = default;
+  MyCalendarThree() { time_intervals.reserve(400); }
 
   int book(const int start_time, const int end_time) {
     if (time_intervals.empty()) {
       time_intervals.emplace_back(start_time, end_time, 1);
       max_booking_level = 1;
-      //      cout << time_intervals << '\n';
-      //      _getch();
       return 1;
     }
 
     bool inserted{};
 
-    if (start_time > time_intervals.back().start) {
-      time_intervals.emplace_back(start_time, end_time, 1);
-      inserted = true;
-    } else {
-      for (size_t i{}; i < time_intervals.size(); i++) {
-        if (start_time == time_intervals[i].start &&
-            end_time == time_intervals[i].end) {
-          time_intervals[i].k_level++;
-          inserted = true;
-          break;
-        }
+    sort(begin(time_intervals), end(time_intervals),
+         [](const TimeInterval& lti, const TimeInterval& rti) {
+           return lti.start < rti.start;
+         });
 
-        if (start_time < time_intervals[i].start) {
-          time_intervals.emplace(begin(time_intervals) + i, start_time,
-                                 end_time, 1);
-          inserted = true;
-          break;
-        }
+    const size_t ti_size{time_intervals.size()};
+    pair<int, int> intersection{};
+
+    for (size_t i{}; i < ti_size; i++) {
+      if (end_time <= time_intervals[i].start)
+        break;
+
+      if (start_time >= time_intervals[i].end)
+        continue;
+
+      if (start_time == time_intervals[i].start &&
+          end_time == time_intervals[i].end) {
+        time_intervals[i].k_level++;
+        if (time_intervals[i].k_level > max_booking_level)
+          max_booking_level = time_intervals[i].k_level;
+        inserted = true;
+        continue;
       }
+
+      intersection.first = max(start_time, time_intervals[i].start);
+      intersection.second = min(end_time, time_intervals[i].end);
+
+      time_intervals.emplace_back(intersection.first, intersection.second,
+                                  time_intervals[i].k_level + 1);
+
+      if (time_intervals.back().k_level > max_booking_level)
+        max_booking_level = time_intervals.back().k_level;
     }
 
     if (!inserted)
       time_intervals.emplace_back(start_time, end_time, 1);
-
-    visited_intersections.clear();
-
-    for (size_t i{}; i < time_intervals.size(); i++) {
-      int max_booking_factor{time_intervals[i].k_level};
-
-      if (time_intervals[i].end <= start_time)
-        continue;
-      if (time_intervals[i].start >= end_time)
-        break;
-
-      pair<int, int> intersection{
-          make_pair(max(start_time, time_intervals[i].start),
-                    min(end_time, time_intervals[i].end))};
-
-      if (visited_intersections.find(intersection) !=
-          end(visited_intersections))
-        continue;
-
-      visited_intersections.insert(intersection);
-
-      for (size_t j{}; j < time_intervals.size(); j++) {
-        if (i == j || time_intervals[j].end <= intersection.first)
-          continue;
-
-        if (intersection.second <= time_intervals[j].start)
-          break;
-
-        intersection.first = max(intersection.first, time_intervals[j].start);
-        intersection.second = min(intersection.second, time_intervals[j].end);
-        max_booking_factor += time_intervals[j].k_level;
-      }
-
-      if (max_booking_factor > max_booking_level)
-        max_booking_level = max_booking_factor;
-    }
-
-    //    cout << time_intervals << '\n';
-    //    _getch();
 
     return max_booking_level;
   }
