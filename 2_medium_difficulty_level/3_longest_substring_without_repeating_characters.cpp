@@ -26,11 +26,12 @@ static int sres = []() {
 
 class Solution {
  public:
-  size_t lengthOfLongestSubstring(string s) const {
-    const size_t s_len{s.length()};
+  size_t lengthOfLongestSubstring(string s) const {    
 
-    if (!s_len)
-      return 0;
+    if (s.empty()) 
+    	return 0;
+
+    const size_t s_len{s.length()};
 
     size_t max_substr_len{1};
     unordered_map<char, size_t> last_visited_unique_char_positions{};
@@ -54,17 +55,12 @@ class Solution {
           i = start + 1;
         }
 
-        if (s_len - start <= max_substr_len) {
-          return max_substr_len;
-        }
-
         last_visited_unique_char_positions.clear();
         last_visited_unique_char_positions[s[start]] = start;
-        continue;
+      } else {
+        last_visited_unique_char_positions[s[i]] = i;
+        i++;
       }
-
-      last_visited_unique_char_positions[s[i]] = i;
-      i++;
     }
 
     if (i - start > max_substr_len)
