@@ -68,7 +68,6 @@ Output:
 
 #include <algorithm>
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -99,28 +98,39 @@ class Solution {
     const size_t cnt_words{words.size()};
     size_t cnt_processed_words{};
 
-    vector<string> formatted_lines{};
-    formatted_lines.reserve(words.size());
+    string line{};
+    line.reserve(2 * maxWidth);
+    size_t index{};
 
-    // size_t index{};
+    if (!cnt_words)
+      return move(words);
+
+    if (1 == cnt_words) {
+      line += words[0];
+      const size_t cnt_of_all_spaces{maxWidth - words[0].length()};
+      if (cnt_of_all_spaces)
+        line += string(cnt_of_all_spaces, ' ');
+      words[0] = move(line);
+      return words;
+    }
 
     while (true) {
       size_t cnt_of_words_for_line{1};
-      size_t cnt_of_letters{words[cnt_processed_words].length()};
-      vector<size_t> word_indices{cnt_processed_words};
-      for (size_t i{cnt_processed_words + 1}; i < cnt_words; i++) {
-        if (cnt_of_letters + cnt_of_words_for_line + words[i].length() >
+      size_t start{cnt_processed_words};
+      size_t cnt_of_letters{words[start].length()};
+      size_t last{start + 1};
+      for (; last < cnt_words; last++) {
+        if (cnt_of_letters + cnt_of_words_for_line + words[last].length() >
             maxWidth)
           break;
         cnt_of_words_for_line++;
-        cnt_of_letters += words[i].length();
-        word_indices.emplace_back(i);
+        cnt_of_letters += words[last].length();
       }
 
       cnt_processed_words += cnt_of_words_for_line;
       const bool last_line{cnt_processed_words == cnt_words};
       const size_t cnt_of_space_locations{cnt_of_words_for_line - 1};
-      const size_t cnt_of_all_spaces{maxWidth - cnt_of_letters};
+      size_t cnt_of_all_spaces{maxWidth - cnt_of_letters};
       const size_t cnt_of_word_spaces{
           cnt_of_space_locations ? cnt_of_all_spaces / cnt_of_space_locations
                                  : cnt_of_all_spaces};
@@ -128,33 +138,34 @@ class Solution {
           cnt_of_space_locations ? cnt_of_all_spaces % cnt_of_space_locations
                                  : 0};
 
-      ostringstream oss{};
+      line.clear();
       const string spaces_str(cnt_of_word_spaces, ' ');
 
-      for (size_t i{}; i < word_indices.size() - 1; i++) {
-        oss << words[word_indices[i]];
+      while (start < last - 1) {
+        line += words[start];
         if (!last_line) {
-          oss << spaces_str;
+          line += spaces_str;
           if (cnt_of_excess_spaces) {
             cnt_of_excess_spaces--;
-            oss << ' ';
+            line.push_back(' ');
           }
-        } else
-          oss << ' ';
+        } else {
+          line.push_back(' ');
+          cnt_of_all_spaces--;
+        }
+
+        ++start;
       }
 
-      oss << words[word_indices.back()];
+      line += words[start];
       if (last_line || 1 == cnt_of_words_for_line)
-        oss << spaces_str;
+        line += string(cnt_of_all_spaces, ' ');
 
-      formatted_lines.push_back(move(oss.str()));
-      // words[index] = move(oss.str());
-      // index++;
+      words[index++] = move(line);
 
       if (last_line) {
-        return formatted_lines;
-        // words.erase(begin(words) + index, end(words));
-        // return move(words);
+        words.erase(begin(words) + index, end(words));
+        return move(words);
       }
     }
   }
