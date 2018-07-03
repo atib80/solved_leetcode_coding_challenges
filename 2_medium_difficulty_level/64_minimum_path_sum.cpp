@@ -26,36 +26,6 @@ Explanation: Because the path 1→3→1→1→1 minimizes the sum.
 using namespace std;
 
 class Solution {
-  void find_min_sum(vector<vector<int>>& grid,
-                    const size_t last_x,
-                    const size_t last_y,
-                    const size_t x,
-                    const size_t y,
-                    int& min_sum,
-                    const int current_sum) {
-    if (x == last_x && y == last_y) {
-      if (current_sum < min_sum)
-        min_sum = current_sum;
-      return;
-    }
-
-    const int saved_number{grid[x][y]};
-
-    grid[x][y] = -1;
-    if (y < last_y && -1 != grid[x][y + 1]) {
-      if (current_sum + grid[x][y + 1] < min_sum)
-        find_min_sum(grid, last_x, last_y, x, y + 1, min_sum,
-                     current_sum + grid[x][y + 1]);
-    }
-
-    if (x < last_x && -1 != grid[x + 1][y]) {
-      if (current_sum + grid[x + 1][y] < min_sum)
-        find_min_sum(grid, last_x, last_y, x + 1, y, min_sum,
-                     current_sum + grid[x + 1][y]);
-    }
-
-    grid[x][y] = saved_number;
-  }
 
  public:
   Solution() = default;
