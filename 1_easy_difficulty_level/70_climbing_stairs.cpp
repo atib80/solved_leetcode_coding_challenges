@@ -26,6 +26,7 @@ Explanation: There are three ways to climb to the top.
 3. 2 steps + 1 step
 */
 
+#include <cassert>
 #include <iostream>
 #include <unordered_map>
 
@@ -37,65 +38,79 @@ static int sres = []() {
   return 0;
 }();
 
-class Solution {
-  unordered_map<uint64_t, uint64_t> precalculated_steps_count{};
+template <uint64_t fib_level>
+struct Fib {
+  static inline const double value =
+      Fib<fib_level - 1>::value + Fib<fib_level - 2>::value;
 
-  void find_number_of_combinations(const uint64_t number_of_stairs,
-                                   uint64_t& combinations,
-                                   const uint64_t current_steps_count = 0) {
-    if (number_of_stairs == current_steps_count) {
-      combinations++;
-      return;
-    }
-
-    precalculated_steps_count[current_steps_count]++;
-
-    if (current_steps_count < number_of_stairs)
-      find_number_of_combinations(number_of_stairs, combinations,
-                                  current_steps_count + 1);
-
-    if (current_steps_count < number_of_stairs - 1)
-      find_number_of_combinations(number_of_stairs, combinations,
-                                  current_steps_count + 2);
+  static inline double getValue(const uint64_t i) {
+    if (i == fib_level)
+      return value;
+    else
+      return Fib<fib_level - 1>::getValue(i);
   }
+};
 
+template <>
+struct Fib<0> {
+  static inline const double value{1};
+
+  static inline double getValue(const uint64_t) { return 1; }
+};
+
+template <>
+struct Fib<1> {
+  static inline const double value{1};
+
+  static inline double getValue(const uint64_t i) {
+    if (i == 1)
+      return value;
+    else
+      return Fib<0>::getValue(i);
+  }
+};
+
+class Solution {
  public:
   Solution() = default;
 
-  uint64_t climbingStairs(const uint64_t number_of_stairs) {
-    if (precalculated_steps_count.find(number_of_stairs) !=
-        end(precalculated_steps_count))
-      return precalculated_steps_count.at(number_of_stairs);
-    uint64_t combinations{};
-    find_number_of_combinations(number_of_stairs, combinations);
-    precalculated_steps_count[number_of_stairs] = combinations;
-    return combinations;
+  double climbStairs(const uint64_t number_of_stairs) {
+    static Fib<93> fib_series{};
+    return fib_series.getValue(number_of_stairs);
   }
 };
 
 int main() {
   Solution s{};
 
-  cout << "s.climbingStairs(10) -> " << s.climbingStairs(10)
+  cout << "s.climbStairs(10) -> " << s.climbStairs(10)
        << '\n';  // expected output: 89
-  cout << "s.climbingStairs(1) -> " << s.climbingStairs(1)
+  cout << "s.climbStairs(1) -> " << s.climbStairs(1)
        << '\n';  // expected output: 1
-  cout << "s.climbingStairs(2) -> " << s.climbingStairs(2)
+  cout << "s.climbStairs(2) -> " << s.climbStairs(2)
        << '\n';  // expected output: 2
-  cout << "s.climbingStairs(3) -> " << s.climbingStairs(3)
+  cout << "s.climbStairs(3) -> " << s.climbStairs(3)
        << '\n';  // expected output: 3
-  cout << "s.climbingStairs(4) -> " << s.climbingStairs(4)
+  cout << "s.climbStairs(4) -> " << s.climbStairs(4)
        << '\n';  // expected output: 5
-  cout << "s.climbingStairs(5) -> " << s.climbingStairs(5)
+  cout << "s.climbStairs(5) -> " << s.climbStairs(5)
        << '\n';  // expected output: 8
-  cout << "s.climbingStairs(6) -> " << s.climbingStairs(6)
+  cout << "s.climbStairs(6) -> " << s.climbStairs(6)
        << '\n';  // expected output: 13
-  cout << "s.climbingStairs(7) -> " << s.climbingStairs(7)
+  cout << "s.climbStairs(7) -> " << s.climbStairs(7)
        << '\n';  // expected output: 21
-  cout << "s.climbingStairs(8) -> " << s.climbingStairs(8)
+  cout << "s.climbStairs(8) -> " << s.climbStairs(8)
        << '\n';  // expected output: 34
-  cout << "s.climbingStairs(9) -> " << s.climbingStairs(9)
+  cout << "s.climbStairs(9) -> " << s.climbStairs(9)
        << '\n';  // expected output: 55
+  cout << "s.climbStairs(90) -> " << s.climbStairs(90)
+       << '\n';  // expected output: 89
+  cout << "s.climbStairs(91) -> " << s.climbStairs(91)
+       << '\n';  // expected output: 89
+  cout << "s.climbStairs(92) -> " << s.climbStairs(92)
+       << '\n';  // expected output: 89
+  cout << "s.climbStairs(93) -> " << s.climbStairs(93)
+       << '\n';  // expected output: 89
 
   return 0;
 }
