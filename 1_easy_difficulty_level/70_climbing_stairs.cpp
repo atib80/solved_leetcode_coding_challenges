@@ -26,24 +26,16 @@ Explanation: There are three ways to climb to the top.
 3. 2 steps + 1 step
 */
 
-#include <cassert>
 #include <iostream>
-#include <unordered_map>
 
 using namespace std;
 
-static int sres = []() {
-  ios::sync_with_stdio(false);
-  cin.tie(nullptr);
-  return 0;
-}();
-
 template <uint64_t fib_level>
 struct Fib {
-  static inline const double value =
+  static const uint64_t value =
       Fib<fib_level - 1>::value + Fib<fib_level - 2>::value;
 
-  static inline double getValue(const uint64_t i) {
+  static inline uint64_t getValue(const uint64_t i) {
     if (i == fib_level)
       return value;
     else
@@ -53,16 +45,16 @@ struct Fib {
 
 template <>
 struct Fib<0> {
-  static inline const double value{1};
+  static const uint64_t value{1};
 
-  static inline double getValue(const uint64_t) { return 1; }
+  static inline uint64_t getValue(const uint64_t) { return 1; }
 };
 
 template <>
 struct Fib<1> {
-  static inline const double value{1};
+  static const uint64_t value{1};
 
-  static inline double getValue(const uint64_t i) {
+  static inline uint64_t getValue(const uint64_t i) {
     if (i == 1)
       return value;
     else
@@ -70,12 +62,11 @@ struct Fib<1> {
   }
 };
 
+static Fib<92> fib_series;
+
 class Solution {
  public:
-  Solution() = default;
-
-  double climbStairs(const uint64_t number_of_stairs) {
-    static Fib<93> fib_series{};
+  uint64_t climbStairs(const uint64_t number_of_stairs) {
     return fib_series.getValue(number_of_stairs);
   }
 };
