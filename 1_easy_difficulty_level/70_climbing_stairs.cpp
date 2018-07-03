@@ -26,82 +26,81 @@ Explanation: There are three ways to climb to the top.
 3. 2 steps + 1 step
 */
 
+#include <iomanip>
 #include <iostream>
 
 using namespace std;
 
-template <uint64_t fib_level>
-struct Fib {
-  static const uint64_t value =
-      Fib<fib_level - 1>::value + Fib<fib_level - 2>::value;
-
-  static inline uint64_t getValue(const uint64_t i) {
-    if (i == fib_level)
-      return value;
-    else
-      return Fib<fib_level - 1>::getValue(i);
-  }
-};
-
-template <>
-struct Fib<0> {
-  static const uint64_t value{1};
-
-  static inline uint64_t getValue(const uint64_t) { return 1; }
-};
-
-template <>
-struct Fib<1> {
-  static const uint64_t value{1};
-
-  static inline uint64_t getValue(const uint64_t i) {
-    if (i == 1)
-      return value;
-    else
-      return Fib<0>::getValue(i);
-  }
-};
-
-static Fib<92> fib_series;
-
 class Solution {
+  static inline double fibonacci_numbers[93];
+
+  static constexpr void initialize_fib_series(const size_t fib_level) {
+    for (size_t i{}; i < fib_level; i++)
+      fibonacci_numbers[i] = fibonacci(i);
+  }
+
+  static constexpr double fibonacci(const size_t fib_level) {
+    double first{1}, second{1};
+
+    for (size_t i{}; i < fib_level; i++) {
+      const double temp{second};
+      second += first;
+      first = temp;
+    }
+
+    return first;
+  }
+
+  static double calculate_fibonacci(const uint64_t fib_level) {
+    if (fib_level < 2)
+      return 1;
+
+    double first{1}, second{1};
+
+    for (uint64_t i{}; i < fib_level; i++) {
+      const double temp{second};
+      second += first;
+      first = temp;
+    }
+
+    return first;
+  }
+
  public:
-  uint64_t climbStairs(const uint64_t number_of_stairs) {
-    return fib_series.getValue(number_of_stairs);
+  Solution() { initialize_fib_series(93); }
+  double climbStairs(const uint64_t number_of_stairs) {
+    if (number_of_stairs > 92)
+      return calculate_fibonacci(number_of_stairs);
+    return fibonacci_numbers[number_of_stairs];
   }
 };
 
 int main() {
   Solution s{};
-
-  cout << "s.climbStairs(10) -> " << s.climbStairs(10)
-       << '\n';  // expected output: 89
-  cout << "s.climbStairs(1) -> " << s.climbStairs(1)
-       << '\n';  // expected output: 1
-  cout << "s.climbStairs(2) -> " << s.climbStairs(2)
-       << '\n';  // expected output: 2
-  cout << "s.climbStairs(3) -> " << s.climbStairs(3)
-       << '\n';  // expected output: 3
-  cout << "s.climbStairs(4) -> " << s.climbStairs(4)
-       << '\n';  // expected output: 5
-  cout << "s.climbStairs(5) -> " << s.climbStairs(5)
-       << '\n';  // expected output: 8
-  cout << "s.climbStairs(6) -> " << s.climbStairs(6)
-       << '\n';  // expected output: 13
-  cout << "s.climbStairs(7) -> " << s.climbStairs(7)
-       << '\n';  // expected output: 21
-  cout << "s.climbStairs(8) -> " << s.climbStairs(8)
-       << '\n';  // expected output: 34
-  cout << "s.climbStairs(9) -> " << s.climbStairs(9)
-       << '\n';  // expected output: 55
-  cout << "s.climbStairs(90) -> " << s.climbStairs(90)
-       << '\n';  // expected output: 89
-  cout << "s.climbStairs(91) -> " << s.climbStairs(91)
-       << '\n';  // expected output: 89
-  cout << "s.climbStairs(92) -> " << s.climbStairs(92)
-       << '\n';  // expected output: 89
-  cout << "s.climbStairs(93) -> " << s.climbStairs(93)
-       << '\n';  // expected output: 89
+  cout << fixed << setprecision(0) << "s.climbStairs(10) -> "
+       << s.climbStairs(10) << '\n'  // expected output: 89
+       << "s.climbStairs(1) -> " << s.climbStairs(1)
+       << '\n'  // expected output: 1
+       << "s.climbStairs(2) -> " << s.climbStairs(2)
+       << '\n'  // expected output: 2
+       << "s.climbStairs(3) -> " << s.climbStairs(3)
+       << '\n'  // expected output: 3
+       << "s.climbStairs(4) -> " << s.climbStairs(4)
+       << '\n'  // expected output: 5
+       << "s.climbStairs(5) -> " << s.climbStairs(5)
+       << '\n'  // expected output: 8
+       << "s.climbStairs(6) -> " << s.climbStairs(6)
+       << '\n'  // expected output: 13
+       << "s.climbStairs(7) -> " << s.climbStairs(7)
+       << '\n'  // expected output: 21
+       << "s.climbStairs(8) -> " << s.climbStairs(8)
+       << '\n'  // expected output: 34
+       << "s.climbStairs(9) -> " << s.climbStairs(9)
+       << '\n'  // expected output: 55
+       << "s.climbStairs(90) -> " << s.climbStairs(90) << '\n'
+       << "s.climbStairs(91) -> " << s.climbStairs(91) << '\n'
+       << "s.climbStairs(92) -> " << s.climbStairs(92) << '\n'
+       << "s.climbStairs(93) -> " << s.climbStairs(93) << '\n';
 
   return 0;
 }
