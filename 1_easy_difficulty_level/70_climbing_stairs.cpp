@@ -26,39 +26,25 @@ Explanation: There are three ways to climb to the top.
 3. 2 steps + 1 step
 */
 
+#include <cassert>
 #include <iomanip>
 #include <iostream>
 
 using namespace std;
 
 class Solution {
-  static inline double fibonacci_numbers[93];
+  static inline uint64_t fibonacci_numbers[93];
 
   static constexpr void initialize_fib_series(const size_t fib_level) {
     for (size_t i{}; i < fib_level; i++)
       fibonacci_numbers[i] = fibonacci(i);
   }
 
-  static constexpr double fibonacci(const size_t fib_level) {
-    double first{1}, second{1};
+  static constexpr uint64_t fibonacci(const size_t fib_level) {
+    uint64_t first{1}, second{1};
 
     for (size_t i{}; i < fib_level; i++) {
-      const double temp{second};
-      second += first;
-      first = temp;
-    }
-
-    return first;
-  }
-
-  static double calculate_fibonacci(const uint64_t fib_level) {
-    if (fib_level < 2)
-      return 1;
-
-    double first{1}, second{1};
-
-    for (uint64_t i{}; i < fib_level; i++) {
-      const double temp{second};
+      const uint64_t temp{second};
       second += first;
       first = temp;
     }
@@ -68,9 +54,8 @@ class Solution {
 
  public:
   Solution() { initialize_fib_series(93); }
-  double climbStairs(const uint64_t number_of_stairs) {
-    if (number_of_stairs > 92)
-      return calculate_fibonacci(number_of_stairs);
+  uint64_t climbStairs(const uint64_t number_of_stairs) {
+    assert(number_of_stairs < 93);
     return fibonacci_numbers[number_of_stairs];
   }
 };
@@ -99,8 +84,7 @@ int main() {
        << '\n'  // expected output: 55
        << "s.climbStairs(90) -> " << s.climbStairs(90) << '\n'
        << "s.climbStairs(91) -> " << s.climbStairs(91) << '\n'
-       << "s.climbStairs(92) -> " << s.climbStairs(92) << '\n'
-       << "s.climbStairs(93) -> " << s.climbStairs(93) << '\n';
+       << "s.climbStairs(92) -> " << s.climbStairs(92) << '\n';
 
   return 0;
 }
