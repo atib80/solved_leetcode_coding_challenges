@@ -16,6 +16,7 @@ return "/home/foo".
 
 #include <iostream>
 #include <string>
+#include <string_view>
 
 using namespace std;
 
@@ -29,9 +30,12 @@ class Solution {
  public:
   string simplifyPath(string path) {
     size_t path_len{path.length()};
-    size_t start{1};
+    size_t start{};
     string absolute_path{};
     absolute_path.reserve(path_len);
+
+    while ('/' == path[start])
+      ++start;
 
     while (start < path_len) {
       size_t next{path.find('/', start)};
@@ -43,7 +47,7 @@ class Solution {
           path_len++;
         }
 
-        const string path_segment{path.substr(start, next - start)};
+        const string_view path_segment(&path[start], next - start);
         if (".." == path_segment) {
           if (absolute_path.empty() || "/" == absolute_path)
             return string(1, '/');
@@ -64,7 +68,7 @@ class Solution {
         }
       }
 
-      const string path_segment{path.substr(start, next - start)};
+      const string_view path_segment(&path[start], next - start);
 
       if (".." == path_segment) {
         const size_t pos{absolute_path.rfind('/')};
@@ -114,6 +118,9 @@ int main() {
        << '\n';  // expected output: "/"
   cout << "s.simplifyPath(\"/...\") -> " << s.simplifyPath(string{"/..."})
        << '\n';  // expected output: "/..."
+  cout << "s.simplifyPath(\"///TJbrd/owxdG//\") -> "
+       << s.simplifyPath(string{"///TJbrd/owxdG//"})
+       << '\n';  // expected output: "/TJbrd/owxdG"
 
   return 0;
 }
