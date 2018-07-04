@@ -19,12 +19,15 @@ return "/home/foo".
 
 using namespace std;
 
+static int sres = []() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+  return 0;
+}();
+
 class Solution {
  public:
   string simplifyPath(string path) {
-    if ("/../" == path || "/./" == path)
-      return "/";
-
     size_t path_len{path.length()};
     size_t start{1};
     string absolute_path{};
@@ -39,15 +42,21 @@ class Solution {
           next = path_len;
           path_len++;
         }
-        if ('.' == path[next - 2] && '.' == path[next - 1]) {
+
+        const string path_segment{path.substr(start, next - start)};
+        if (".." == path_segment) {
+          if (absolute_path.empty() || "/" == absolute_path)
+            return string(1, '/');
           const size_t pos{absolute_path.rfind('/')};
           if (!pos)
             return string(1, '/');
           absolute_path.erase(pos);
           return absolute_path;
-        } else if ('.' == path[next])
+        } else if ("." == path_segment) {
+          if (absolute_path.empty() || "/" == absolute_path)
+            return string(1, '/');
           return absolute_path;
-        else {
+        } else {
           absolute_path.push_back('/');
           for (size_t i{start}; i < next; i++)
             absolute_path.push_back(path[i]);
@@ -55,10 +64,13 @@ class Solution {
         }
       }
 
-      if ('.' == path[next - 1] && '.' == path[next - 2]) {
+      const string path_segment{path.substr(start, next - start)};
+
+      if (".." == path_segment) {
         const size_t pos{absolute_path.rfind('/')};
-        absolute_path.erase(pos);
-      } else if ('.' != path[next - 1]) {
+        if (string::npos != pos)
+          absolute_path.erase(pos);
+      } else if ("." != path_segment) {
         absolute_path.push_back('/');
         for (size_t i{start}; i < next; i++)
           absolute_path.push_back(path[i]);
@@ -68,6 +80,9 @@ class Solution {
       while ('/' == path[start])
         start++;
     }
+
+    if (absolute_path.empty())
+      return string(1, '/');
 
     return absolute_path;
   }
@@ -81,11 +96,24 @@ int main() {
   cout << "s.simplifyPath(\"/a/./b/../../c/\") -> "
        << s.simplifyPath(string{"/a/./b/../../c/"})
        << '\n';  // expected output: "/c"
-  cout << "s.simplifyPath(\"/../\") -> " << s.simplifyPath(string{"/../"})
-       << '\n';  // expected output: "/"
   cout << "s.simplifyPath(\"/home//foo/\") -> "
        << s.simplifyPath(string{"/home//foo/"})
        << '\n';  // expected output: "/home/foo"
+  cout << "s.simplifyPath(\"/../\") -> " << s.simplifyPath(string{"/../"})
+       << '\n';  // expected output: "/"
+  cout << "s.simplifyPath(\"/..\") -> " << s.simplifyPath(string{"/.."})
+       << '\n';  // expected output: "/"
+  cout << "s.simplifyPath(\"/./\") -> " << s.simplifyPath(string{"/./"})
+       << '\n';  // expected output: "/"
+  cout << "s.simplifyPath(\"/.\") -> " << s.simplifyPath(string{"/."})
+       << '\n';  // expected output: "/"
+  cout << "s.simplifyPath(\"/home/../../..\") -> "
+       << s.simplifyPath(string{"/home/../../.."})
+       << '\n';  // expected output: "/"
+  cout << "s.simplifyPath(\"/\") -> " << s.simplifyPath(string{"/"})
+       << '\n';  // expected output: "/"
+  cout << "s.simplifyPath(\"/...\") -> " << s.simplifyPath(string{"/..."})
+       << '\n';  // expected output: "/..."
 
   return 0;
 }
