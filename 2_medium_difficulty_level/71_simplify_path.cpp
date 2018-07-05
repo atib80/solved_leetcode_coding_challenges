@@ -50,25 +50,6 @@ class Solution {
 
       const string path_segment{path.substr(start, next - start)};
 
-      if (path_len - 1 == next) {
-        if (".." == path_segment) {
-          const size_t pos{
-              apsolute_path.rfind('/', apsolute_path.length() - 2)};
-          if (!pos)
-            return string(1, '/');
-          apsolute_path.erase(pos);
-          return apsolute_path;
-        } else if ("." == path_segment) {
-          if (apsolute_path.empty() || "/" == apsolute_path)
-            return string(1, '/');
-          apsolute_path.pop_back();
-          return apsolute_path;
-        } else {
-          apsolute_path.append(move(path_segment));
-          return apsolute_path;
-        }
-      }
-
       if (".." == path_segment) {
         const size_t pos{apsolute_path.rfind('/', apsolute_path.length() - 2)};
         if (string::npos != pos)
