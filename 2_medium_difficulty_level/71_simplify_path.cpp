@@ -43,15 +43,15 @@ class Solution {
 
       if (start >= path_len) {
         if ('/' == apsolute_path.back() && apsolute_path.length() > 1)
-          apsolute_path.erase(--end(apsolute_path));
+          apsolute_path.pop_back();
         return apsolute_path;
       }
 
       size_t next{path.find('/', start)};
 
-      if (path_len - 1 == next) {
-        const string_view path_segment(&path[start], next - start);
+      const string path_segment{path.substr(start, next - start)};
 
+      if (path_len - 1 == next) {
         if (".." == path_segment) {
           const size_t pos{
               apsolute_path.rfind('/', apsolute_path.length() - 2)};
@@ -64,21 +64,18 @@ class Solution {
             return string(1, '/');
           return apsolute_path;
         } else {
-          for (size_t i{start}; i < next; i++)
-            apsolute_path.push_back(path[i]);
+          apsolute_path.append(move(path_segment));
           return apsolute_path;
         }
       }
-
-      const string_view path_segment(&path[start], next - start);
 
       if (".." == path_segment) {
         const size_t pos{apsolute_path.rfind('/', apsolute_path.length() - 2)};
         if (string::npos != pos)
           apsolute_path.erase(pos + 1);
       } else if ("." != path_segment) {
-        for (size_t i{start}; i <= next; i++)
-          apsolute_path.push_back(path[i]);
+        apsolute_path.append(move(path_segment));
+        apsolute_path.push_back('/');
       }
 
       start = next + 1;
