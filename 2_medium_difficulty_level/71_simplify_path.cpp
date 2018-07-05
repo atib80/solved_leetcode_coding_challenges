@@ -29,66 +29,62 @@ static int sres = []() {
 class Solution {
  public:
   string simplifyPath(string path) {
-    size_t path_len{path.length()};
+    if ('/' != path.back())
+      path.push_back('/');
+    const size_t path_len{path.length()};
+    string apsolute_path(1, '/');
+    apsolute_path.reserve(path_len);
+
     size_t start{};
-    string absolute_path{};
-    absolute_path.reserve(path_len);
 
-    while ('/' == path[start])
-      ++start;
+    while (true) {
+      while ('/' == path[start] && start < path_len)
+        ++start;
 
-    while (start < path_len) {
+      if (start >= path_len) {
+        if ('/' == apsolute_path.back() && apsolute_path.length() > 1)
+          apsolute_path.erase(--end(apsolute_path));
+        return apsolute_path;
+      }
+
       size_t next{path.find('/', start)};
 
-      if (string::npos == next || path_len - 1 == next) {
-        if (string::npos == next) {
-          path.push_back('/');
-          next = path_len;
-          path_len++;
-        }
-
+      if (path_len - 1 == next) {
         const string_view path_segment(&path[start], next - start);
+
         if (".." == path_segment) {
-          if (absolute_path.empty() || "/" == absolute_path)
-            return string(1, '/');
-          const size_t pos{absolute_path.rfind('/')};
+          const size_t pos{
+              apsolute_path.rfind('/', apsolute_path.length() - 2)};
           if (!pos)
             return string(1, '/');
-          absolute_path.erase(pos);
-          return absolute_path;
+          apsolute_path.erase(pos + 1);
+          return apsolute_path;
         } else if ("." == path_segment) {
-          if (absolute_path.empty() || "/" == absolute_path)
+          if (apsolute_path.empty())
             return string(1, '/');
-          return absolute_path;
+          return apsolute_path;
         } else {
-          absolute_path.push_back('/');
           for (size_t i{start}; i < next; i++)
-            absolute_path.push_back(path[i]);
-          return absolute_path;
+            apsolute_path.push_back(path[i]);
+          return apsolute_path;
         }
       }
 
       const string_view path_segment(&path[start], next - start);
 
       if (".." == path_segment) {
-        const size_t pos{absolute_path.rfind('/')};
+        const size_t pos{apsolute_path.rfind('/', apsolute_path.length() - 2)};
         if (string::npos != pos)
-          absolute_path.erase(pos);
+          apsolute_path.erase(pos + 1);
       } else if ("." != path_segment) {
-        absolute_path.push_back('/');
-        for (size_t i{start}; i < next; i++)
-          absolute_path.push_back(path[i]);
+        for (size_t i{start}; i <= next; i++)
+          apsolute_path.push_back(path[i]);
       }
 
       start = next + 1;
-      while ('/' == path[start])
-        start++;
     }
 
-    if (absolute_path.empty())
-      return string(1, '/');
-
-    return absolute_path;
+    return apsolute_path;
   }
 };
 
