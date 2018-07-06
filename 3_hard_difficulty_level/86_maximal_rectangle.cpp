@@ -18,6 +18,7 @@ Output: 6
 
 #include <algorithm>
 #include <iostream>
+#include <set>
 #include <vector>
 
 using namespace std;
@@ -33,38 +34,55 @@ class Solution {
   size_t matrix_height;
   size_t matrix_width;
 
-  bool find_maximal_rectangle_in_matrix(const size_t height,
-                                        const size_t width) {
-    for (size_t y{}; y + height <= matrix_height; y++) {
-      for (size_t x{}; x + width <= matrix_width; x++) {
-        bool is_rectangle_found{true};
+  int find_maximal_rectangle_in_matrix() {
+    multiset<pair<size_t, int>> intersections{};
 
-        for (size_t i{y}; i < y + height; i++) {
-          for (size_t j{x}; j < x + width; j++) {
-            if (!matrix_[i][j]) {
-              x = j;
-              y = i;
-              is_rectangle_found = false;
-              break;
-            }
-          }
-
-          if (!is_rectangle_found)
-            break;
+    for (const vector<char>& row : matrix_) {
+      size_t start{string::npos};
+      for (size_t y{}; y < matrix_width; y++) {
+        if (string::npos != start && '0' == row[y] && y - start > 1) {
+          intersections.insert(make_pair(start, 1));
+          intersections.insert(make_pair(y, -1));
+          start = string::npos;
+        } else if (string::npos == start && '1' == row[y]) {
+          start = y;
         }
+      }
 
-        if (is_rectangle_found)
-          return true;
+      if (string::npos != start && matrix_width - start > 1) {
+        intersections.insert(make_pair(start, 1));
+        intersections.insert(make_pair(matrix_width, -1));
       }
     }
 
-    return false;
+    int maximal_rectangle{1};
+
+    auto current_iter = begin(intersections);
+    size_t start{current_iter->first};
+    int current_rect{current_iter->second};
+    ++current_iter;
+
+    while (current_iter != end(intersections)) {
+      if (-1 == current_iter->second && string::npos != start) {
+        const int product{current_rect * static_cast<int>(current_iter->first - start)};
+        if (product > maximal_rectangle)
+          maximal_rectangle = product;
+      } else if (string::npos == start && 1 == current_iter->second)
+        start = current_iter->first;
+
+      current_rect += current_iter->second;
+      if (0 == current_rect)
+        start = string::npos;
+      ++current_iter;
+    }
+
+    return maximal_rectangle;
   }
 
   bool check_if_matrix_has_one_elements() {
     for (const vector<char>& row : matrix_) {
       if (any_of(begin(row), end(row),
-                 [](const int value) { return 0 != value; }))
+                 [](const int value) { return '0' != value; }))
         return true;
     }
 
@@ -77,37 +95,13 @@ class Solution {
       return 0;
 
     matrix_ = move(matrix);
-
-    for (vector<char>& row : matrix_) {
-      for (char& ch : row)
-        ch -= '0';
-    }
+    matrix_height = matrix_.size();
+    matrix_width = matrix_[0].size();
 
     if (!check_if_matrix_has_one_elements())
       return 0;
 
-    matrix_height = matrix_.size();
-    matrix_width = matrix_[0].size();
-    vector<pair<size_t, size_t>> width_height_pairs{};
-
-    for (size_t i{matrix_width}; i >= 1; i--)
-      for (size_t j{matrix_height}; j >= 1; j--)
-        width_height_pairs.emplace_back(make_pair(i, j));
-
-    sort(begin(width_height_pairs), end(width_height_pairs),
-         [](const pair<size_t, size_t>& lhs, const pair<size_t, size_t>& rhs) {
-           return lhs.first * lhs.second > rhs.first * rhs.second;
-         });
-
-    for (size_t i{}; i < width_height_pairs.size() - 1; i++) {
-      const size_t width{width_height_pairs[i].first};
-      const size_t height{width_height_pairs[i].second};
-
-      if (find_maximal_rectangle_in_matrix(width, height))
-        return width * height;
-    }
-
-    return 1;
+    return find_maximal_rectangle_in_matrix();
   }
 };
 
@@ -121,7 +115,17 @@ int main() {
 
   cout << "s.maximalRectangle({{'1','0','1','0','0'},{'1','0','1','1','1'},{'1'"
           ",'1','1','1','1'},{'1','0','0','1','0'}}) -> "
-       << s.maximalRectangle(input) << '\n';
+       << s.maximalRectangle(input) << '\n';  // expected output: 6
+
+  input.assign({{'1', '0', '1', '1', '1'},
+                {'0', '1', '0', '1', '0'},
+                {'1', '1', '0', '1', '1'},
+                {'1', '1', '0', '1', '1'},
+                {'0', '1', '1', '1', '1'}});
+
+  cout << "s.maximalRectangle({{'1','0','1','1','1'},{'0','1','0','1','0'},{'1'"
+          ",'1','0','1','1'},{'1','1','0','1','1'},{'0','1','1','1','1'}}) -> "
+       << s.maximalRectangle(input) << '\n';  // expected output: 6
 
   return 0;
 }
