@@ -52,8 +52,7 @@ class Solution {
       size_t start{string::npos};
       for (size_t y{}; y < matrix_width; y++) {
         if ('0' == row[y]) {
-          if (single_ones_height[y])
-            single_ones_height[y]--;
+          single_ones_height[y] = 0;
           if (string::npos != start && y - start > 1) {
             intersections[make_pair(start, y)]++;
             found_series_of_ones = true;
@@ -62,9 +61,9 @@ class Solution {
           start = string::npos;
         } else if ('1' == row[y]) {
           single_ones_height[y]++;
+          if (single_ones_height[y] > maximal_rectangle)
+            maximal_rectangle = single_ones_height[y];
           if (string::npos == start) {
-            if (!maximal_rectangle)
-              maximal_rectangle = 1;
             start = y;
           }
         }
@@ -108,7 +107,7 @@ class Solution {
               max(intersection.first, current_iter->first.first);
           intersection.second =
               min(intersection.second, current_iter->first.second);
-          height++;
+          height += current_iter->second;
           ++current_iter;
         }
 
@@ -121,22 +120,7 @@ class Solution {
       }
     }
 
-    for (const int h : single_ones_height) {
-      if (h > maximal_rectangle)
-        maximal_rectangle = h;
-    }
-
     return maximal_rectangle;
-  }
-
-  bool check_if_matrix_has_one_elements() {
-    for (const vector<char>& row : matrix_) {
-      if (any_of(begin(row), end(row),
-                 [](const int value) { return '0' != value; }))
-        return true;
-    }
-
-    return false;
   }
 
  public:
@@ -177,6 +161,19 @@ int main() {
   input.assign({{'0', '1'}, {'0', '1'}});
   cout << "s.maximalRectangle({{'0','1'},{'0','1'}}) -> "
        << s.maximalRectangle(input) << '\n';  // expected output: 2
+
+  // 1 - 3 | 0 - 2 | 1 - 4 | 0 - 4 | 0 - 5
+
+  input.assign({{'0', '1', '1', '0', '1'},
+                {'1', '1', '0', '1', '0'},
+                {'0', '1', '1', '1', '0'},
+                {'1', '1', '1', '1', '0'},
+                {'1', '1', '1', '1', '1'},
+                {'0', '0', '0', '0', '0'}});
+  cout << "s.maximalRectangle({{'0','1','1','0','1'},{'1','1','0','1','0'},{'0'"
+          ",'1','1','1','0'},{'1','1','1','1','0'},{'1','1','1','1','1'},{'0','"
+          "0','0','0','0'}}) -> "
+       << s.maximalRectangle(input) << '\n';  // expected output: 9
 
   return 0;
 }
