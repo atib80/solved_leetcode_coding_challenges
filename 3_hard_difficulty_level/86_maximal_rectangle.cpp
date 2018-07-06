@@ -43,7 +43,8 @@ class Solution {
   int find_maximal_rectangle_in_matrix() {
     map<pair<size_t, size_t>, int> intersections{};
     unordered_set<pair<size_t, size_t>> skip_intersections{};
-    int maximal_rectangle{1};
+    vector<int> single_ones_height(matrix_width, 0);
+    int maximal_rectangle{};
 
     for (const vector<char>& row : matrix_) {
       bool found_series_of_ones{};
@@ -51,14 +52,22 @@ class Solution {
       size_t start{string::npos};
       for (size_t y{}; y < matrix_width; y++) {
         if ('0' == row[y]) {
+          if (single_ones_height[y])
+            single_ones_height[y]--;
           if (string::npos != start && y - start > 1) {
             intersections[make_pair(start, y)]++;
             found_series_of_ones = true;
           }
 
           start = string::npos;
-        } else if (string::npos == start && '1' == row[y])
-          start = y;
+        } else if ('1' == row[y]) {
+          single_ones_height[y]++;
+          if (string::npos == start) {
+            if (!maximal_rectangle)
+              maximal_rectangle = 1;
+            start = y;
+          }
+        }
       }
 
       if (string::npos != start && matrix_width - start > 1) {
@@ -112,6 +121,11 @@ class Solution {
       }
     }
 
+    for (const int h : single_ones_height) {
+      if (h > maximal_rectangle)
+        maximal_rectangle = h;
+    }
+
     return maximal_rectangle;
   }
 
@@ -133,9 +147,6 @@ class Solution {
     matrix_ = move(matrix);
     matrix_height = matrix_.size();
     matrix_width = matrix_[0].size();
-
-    if (!check_if_matrix_has_one_elements())
-      return 0;
 
     return find_maximal_rectangle_in_matrix();
   }
@@ -162,6 +173,10 @@ int main() {
   cout << "s.maximalRectangle({{'1','0','1','1','1'},{'0','1','0','1','0'},{'1'"
           ",'1','0','1','1'},{'1','1','0','1','1'},{'0','1','1','1','1'}}) -> "
        << s.maximalRectangle(input) << '\n';  // expected output: 6
+
+  input.assign({{'0', '1'}, {'0', '1'}});
+  cout << "s.maximalRectangle({{'0','1'},{'0','1'}}) -> "
+       << s.maximalRectangle(input) << '\n';  // expected output: 2
 
   return 0;
 }
