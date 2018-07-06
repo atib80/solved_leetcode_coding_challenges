@@ -8,72 +8,108 @@ Example:
 
 Input:
 [
-  ["1","0","1","0","0"],
-  ["1","0","1","1","1"],
-  ["1","1","1","1","1"],
-  ["1","0","0","1","0"]
+["1","0","1","0","0"],
+["1","0","1","1","1"],
+["1","1","1","1","1"],
+["1","0","0","1","0"]
 ]
 Output: 6
 */
 
 #include <algorithm>
 #include <iostream>
-#include <set>
+#include <map>
+#include <unordered_set>
 #include <vector>
 
 using namespace std;
 
-static int sres = []() {
-  ios::sync_with_stdio(false);
-  cin.tie(nullptr);
-  return 0;
-}();
+namespace std {
+template <>
+struct hash<pair<size_t, size_t>> {
+  uint64_t operator()(const pair<size_t, size_t>& p) const noexcept {
+    uint64_t first{p.first};
+    first <<= 32u;
+    return first + p.second;
+  }
+};
+}  // namespace std
 
 class Solution {
-  vector<vector<char>> matrix_;
-  size_t matrix_height;
-  size_t matrix_width;
+  vector<vector<char>> matrix_{};
+  size_t matrix_height{};
+  size_t matrix_width{};
 
   int find_maximal_rectangle_in_matrix() {
-    multiset<pair<size_t, int>> intersections{};
+    map<pair<size_t, size_t>, int> intersections{};
+    unordered_set<pair<size_t, size_t>> skip_intersections{};
+    int maximal_rectangle{1};
 
     for (const vector<char>& row : matrix_) {
+      bool found_series_of_ones{};
+
       size_t start{string::npos};
       for (size_t y{}; y < matrix_width; y++) {
-        if (string::npos != start && '0' == row[y] && y - start > 1) {
-          intersections.insert(make_pair(start, 1));
-          intersections.insert(make_pair(y, -1));
+        if ('0' == row[y]) {
+          if (string::npos != start && y - start > 1) {
+            intersections[make_pair(start, y)]++;
+            found_series_of_ones = true;
+          }
+
           start = string::npos;
-        } else if (string::npos == start && '1' == row[y]) {
+        } else if (string::npos == start && '1' == row[y])
           start = y;
-        }
       }
 
       if (string::npos != start && matrix_width - start > 1) {
-        intersections.insert(make_pair(start, 1));
-        intersections.insert(make_pair(matrix_width, -1));
+        intersections[make_pair(start, matrix_width)]++;
+        found_series_of_ones = true;
       }
-    }
 
-    int maximal_rectangle{1};
+      if (!found_series_of_ones) {
+        intersections.clear();
+        continue;
+      }
 
-    auto current_iter = begin(intersections);
-    size_t start{current_iter->first};
-    int current_rect{current_iter->second};
-    ++current_iter;
+      skip_intersections.clear();
 
-    while (current_iter != end(intersections)) {
-      if (-1 == current_iter->second && string::npos != start) {
-        const int product{current_rect * static_cast<int>(current_iter->first - start)};
+      for (const auto& r : intersections) {
+        if (skip_intersections.find(r.first) != end(skip_intersections))
+          continue;
+
+        pair<size_t, size_t> intersection{r.first};
+        int height{r.second};
+        auto current_iter = begin(intersections);
+
+        while (current_iter != end(intersections)) {
+          if (r.first == current_iter->first) {
+            ++current_iter;
+            continue;
+          }
+
+          if (current_iter->first.second <= intersection.first) {
+            ++current_iter;
+            continue;
+          }
+
+          if (current_iter->first.first >= intersection.second)
+            break;
+
+          intersection.first =
+              max(intersection.first, current_iter->first.first);
+          intersection.second =
+              min(intersection.second, current_iter->first.second);
+          height++;
+          ++current_iter;
+        }
+
+        const int product{height * static_cast<int>(intersection.second -
+                                                    intersection.first)};
         if (product > maximal_rectangle)
           maximal_rectangle = product;
-      } else if (string::npos == start && 1 == current_iter->second)
-        start = current_iter->first;
 
-      current_rect += current_iter->second;
-      if (0 == current_rect)
-        start = string::npos;
-      ++current_iter;
+        skip_intersections.insert(intersection);
+      }
     }
 
     return maximal_rectangle;
