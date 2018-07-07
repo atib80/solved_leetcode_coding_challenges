@@ -18,39 +18,26 @@ Output: 6
 
 #include <algorithm>
 #include <iostream>
-// #include <map>
 #include <queue>
 #include <tuple>
-// #include <unordered_set>
 #include <utility>
 #include <vector>
 
 using namespace std;
 
-// namespace std {
-// template <>
-// struct hash<pair<size_t, size_t>> {
-//   uint64_t operator()(const pair<size_t, size_t>& p) const noexcept {
-//     uint64_t first{p.first};
-//     first <<= 32u;
-//     return first + p.second;
-//   }
-// };
-// }  // namespace std
-
 class Solution {
-  vector<vector<char>> matrix_{};
-  size_t matrix_height{};
-  size_t matrix_width{};
+ public:
+  int maximalRectangle(vector<vector<char>>& matrix) {
+    if (matrix.empty())
+      return 0;
+    const size_t matrix_height{matrix.size()};
+    const size_t matrix_width{matrix[0].size()};
 
-  int find_maximal_rectangle_in_matrix() {
-    // map<pair<size_t, size_t>, int> intersections{};
-    // unordered_set<pair<size_t, size_t>> skip_intersections{};
     vector<vector<pair<int, int>>> row_ones{};
     vector<int> single_ones_height(matrix_width, 0);
     int maximal_rectangle{};
 
-    for (const vector<char>& row : matrix_) {
+    for (const vector<char>& row : matrix) {
       vector<pair<int, int>> ones{};
       bool found_series_of_ones{};
 
@@ -84,6 +71,8 @@ class Solution {
         const int row_ones_size = row_ones.size();
         for (size_t i{}; i < ones.size(); i++) {
           const int product{ones[i].second - ones[i].first};
+          if (product * (row_ones_size + 1) <= maximal_rectangle)
+            continue;
           if (product > maximal_rectangle)
             maximal_rectangle = product;
           if (row_ones_size)
@@ -124,18 +113,6 @@ class Solution {
     }
 
     return maximal_rectangle;
-  }
-
- public:
-  int maximalRectangle(vector<vector<char>>& matrix) {
-    if (matrix.empty())
-      return 0;
-
-    matrix_ = move(matrix);
-    matrix_height = matrix_.size();
-    matrix_width = matrix_[0].size();
-
-    return find_maximal_rectangle_in_matrix();
   }
 };
 
