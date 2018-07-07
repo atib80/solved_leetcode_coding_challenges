@@ -18,22 +18,25 @@ Output: 6
 
 #include <algorithm>
 #include <iostream>
-#include <map>
-#include <unordered_set>
+// #include <map>
+#include <queue>
+#include <tuple>
+// #include <unordered_set>
+#include <utility>
 #include <vector>
 
 using namespace std;
 
-namespace std {
-template <>
-struct hash<pair<size_t, size_t>> {
-  uint64_t operator()(const pair<size_t, size_t>& p) const noexcept {
-    uint64_t first{p.first};
-    first <<= 32u;
-    return first + p.second;
-  }
-};
-}  // namespace std
+// namespace std {
+// template <>
+// struct hash<pair<size_t, size_t>> {
+//   uint64_t operator()(const pair<size_t, size_t>& p) const noexcept {
+//     uint64_t first{p.first};
+//     first <<= 32u;
+//     return first + p.second;
+//   }
+// };
+// }  // namespace std
 
 class Solution {
   vector<vector<char>> matrix_{};
@@ -41,12 +44,14 @@ class Solution {
   size_t matrix_width{};
 
   int find_maximal_rectangle_in_matrix() {
-    map<pair<size_t, size_t>, int> intersections{};
-    unordered_set<pair<size_t, size_t>> skip_intersections{};
+    // map<pair<size_t, size_t>, int> intersections{};
+    // unordered_set<pair<size_t, size_t>> skip_intersections{};
+    vector<vector<pair<int, int>>> row_ones{};
     vector<int> single_ones_height(matrix_width, 0);
     int maximal_rectangle{};
 
     for (const vector<char>& row : matrix_) {
+      vector<pair<int, int>> ones{};
       bool found_series_of_ones{};
 
       size_t start{string::npos};
@@ -54,7 +59,7 @@ class Solution {
         if ('0' == row[y]) {
           single_ones_height[y] = 0;
           if (string::npos != start && y - start > 1) {
-            intersections[make_pair(start, y)]++;
+            ones.emplace_back(start, y);
             found_series_of_ones = true;
           }
 
@@ -70,54 +75,52 @@ class Solution {
       }
 
       if (string::npos != start && matrix_width - start > 1) {
-        intersections[make_pair(start, matrix_width)]++;
+        ones.emplace_back(start, matrix_width);
         found_series_of_ones = true;
       }
 
-      if (!found_series_of_ones) {
-        intersections.clear();
-        continue;
-      }
-
-      skip_intersections.clear();
-
-      for (const auto& r : intersections) {
-        if (skip_intersections.find(r.first) != end(skip_intersections))
-          continue;
-
-        pair<size_t, size_t> intersection{r.first};
-        int height{r.second};
-        auto current_iter = begin(intersections);
-
-        while (current_iter != end(intersections)) {
-          if (r.first == current_iter->first) {
-            ++current_iter;
-            continue;
-          }
-
-          if (current_iter->first.second <= intersection.first) {
-            ++current_iter;
-            continue;
-          }
-
-          if (current_iter->first.first >= intersection.second)
-            break;
-
-          intersection.first =
-              max(intersection.first, current_iter->first.first);
-          intersection.second =
-              min(intersection.second, current_iter->first.second);
-          height += current_iter->second;
-          ++current_iter;
+      if (found_series_of_ones) {
+        queue<tuple<int, int, int>> q{};
+        const int row_ones_size = row_ones.size();
+        for (size_t i{}; i < ones.size(); i++) {
+          const int product{ones[i].second - ones[i].first};
+          if (product > maximal_rectangle)
+            maximal_rectangle = product;
+          if (row_ones_size)
+            q.emplace(
+                make_tuple(ones[i].first, ones[i].second, row_ones_size - 1));
         }
 
-        const int product{height * static_cast<int>(intersection.second -
-                                                    intersection.first)};
-        if (product > maximal_rectangle)
-          maximal_rectangle = product;
+        while (!q.empty()) {
+          const int first{get<0>(q.front())};
+          const int last{get<1>(q.front())};
+          const int index{get<2>(q.front())};
+          q.pop();
 
-        skip_intersections.insert(intersection);
-      }
+          for (size_t i{}; i < row_ones[index].size(); i++) {
+            if (first >= row_ones[index][i].second)
+              continue;
+
+            if (last <= row_ones[index][i].first)
+              break;
+
+            const int i_start{max(first, row_ones[index][i].first)};
+            const int i_last{min(last, row_ones[index][i].second)};
+            const int i_diff{i_last - i_start};
+            if (1 == i_diff)
+              continue;
+            const int product{(row_ones_size - index + 1) * i_diff};
+            if (product > maximal_rectangle)
+              maximal_rectangle = product;
+            if (index)
+              q.emplace(make_tuple(i_start, i_last, index - 1));
+          }
+        }
+
+        row_ones.emplace_back(move(ones));
+
+      } else
+        row_ones.clear();
     }
 
     return maximal_rectangle;
