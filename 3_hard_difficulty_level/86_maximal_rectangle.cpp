@@ -25,6 +25,12 @@ Output: 6
 
 using namespace std;
 
+static int sres = []() {
+  ios::sync_with_stdio(false);
+  cin.tie(nullptr);
+  return 0;
+}();
+
 class Solution {
  public:
   int maximalRectangle(vector<vector<char>>& matrix) {
