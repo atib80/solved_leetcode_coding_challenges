@@ -35,9 +35,7 @@ exection -> execution (insert 'u')
 
 #include <algorithm>
 #include <iostream>
-#include <iterator>
 #include <string>
-#include <type_traits>
 
 using namespace std;
 
@@ -106,7 +104,7 @@ class Solution {
     const int longer_word_len = max(word1_len, word2_len);
     const auto diff_values = find_length_of_longest_common_subsequence(
         begin(word1), end(word1), begin(word2), end(word2));
-    return (longer_word_len - diff_values.first) + diff_values.second;
+    return longer_word_len - diff_values.first + diff_values.second;
   }
 };
 
