@@ -31,6 +31,8 @@ exention -> exection (replace 'n' with 'c')
 exection -> execution (insert 'u')
 */
 
+// ab, bc
+
 #include <algorithm>
 #include <iostream>
 #include <iterator>
@@ -46,21 +48,23 @@ static int sres = []() {
 }();
 
 template <typename ForwardIter>
-auto find_length_of_longest_common_subsequence(ForwardIter&& src_first,
-                                               ForwardIter&& src_last,
-                                               ForwardIter&& dst_first,
-                                               ForwardIter&& dst_last) {
+pair<typename std::iterator_traits<ForwardIter>::difference_type,
+     typename std::iterator_traits<ForwardIter>::difference_type>
+find_length_of_longest_common_subsequence(ForwardIter&& src_first,
+                                          ForwardIter&& src_last,
+                                          ForwardIter&& dst_first,
+                                          ForwardIter&& dst_last) {
   using difference_type =
       typename std::iterator_traits<ForwardIter>::difference_type;
 
-  if (src_first == src_last || dst_first == dst_last)
-    return 0;
+  pair<difference_type, difference_type> result{};
 
-  difference_type longest_common_sequence_length{};
+  if (src_first == src_last || dst_first == dst_last)
+    return result;
 
   while (dst_first != dst_last) {
-    if (distance(dst_first, dst_last) <= longest_common_sequence_length)
-      return longest_common_sequence_length;
+    if (distance(dst_first, dst_last) <= result.first)
+      return result;
 
     ForwardIter src_offset{src_first}, dst_offset{dst_first};
     difference_type seq_len{};
@@ -76,24 +80,33 @@ auto find_length_of_longest_common_subsequence(ForwardIter&& src_first,
         break;
 
       ++dst_offset;
+      if (src_offset == src_last) {
+        if (seq_len > result.first)
+          result.first = seq_len;
+        result.second = distance(dst_offset, dst_last);
+        return result;
+      }
     }
 
-    if (seq_len > longest_common_sequence_length)
-      longest_common_sequence_length = seq_len;
+    if (seq_len > result.first)
+      result.first = seq_len;
   }
 
-  return longest_common_sequence_length;
+  return result;
 }
 
 class Solution {
  public:
   size_t minDistance(string word1, string word2) {
     const size_t word1_len{word1.length()}, word2_len{word2.length()};
+    if (string::npos != word1.find(word2))
+      return word1_len - word2_len;
+    if (string::npos != word2.find(word1))
+      return word2_len - word1_len;
     const int longer_word_len = max(word1_len, word2_len);
-    const int longest_common_sequence_length =
-        find_length_of_longest_common_subsequence(begin(word1), end(word1),
-                                                  begin(word2), end(word2));
-    return longer_word_len - longest_common_sequence_length;
+    const auto diff_values = find_length_of_longest_common_subsequence(
+        begin(word1), end(word1), begin(word2), end(word2));
+    return (longer_word_len - diff_values.first) + diff_values.second;
   }
 };
 
@@ -101,9 +114,20 @@ int main() {
   Solution s{};
 
   cout << "s.minDistance(\"horse\", \"ros\") -> "
-       << s.minDistance(string{"horse"}, string{"ros"}) << '\n';
+       << s.minDistance(string{"horse"}, string{"ros"})
+       << '\n';  // expected output: 3
   cout << "s.minDistance(\"intention\", \"execution\") -> "
-       << s.minDistance(string{"intention"}, string{"execution"}) << '\n';
+       << s.minDistance(string{"intention"}, string{"execution"})
+       << '\n';  // expected output: 5
+  cout << "s.minDistance(\"ab\", \"bc\") -> "
+       << s.minDistance(string{"ab"}, string{"bc"})
+       << '\n';  // expected output: 2
+  cout << "s.minDistance(\"a\", \"a\") -> "
+       << s.minDistance(string{"a"}, string{"a"})
+       << '\n';  // expected output: 0
+  cout << "s.minDistance(\"sea\", \"eat\") -> "
+       << s.minDistance(string{"sea"}, string{"eat"})
+       << '\n';  // expected output: 2
 
   return 0;
 }
