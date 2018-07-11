@@ -96,6 +96,7 @@ find_length_of_longest_common_subsequence(ForwardIter&& src_first,
 class Solution {
  public:
   size_t minDistance(string word1, string word2) {
+    using iterator_type = decltype(begin(word1));
     const size_t word1_len{word1.length()}, word2_len{word2.length()};
     if (string::npos != word1.find(word2))
       return word1_len - word2_len;
@@ -103,7 +104,10 @@ class Solution {
       return word2_len - word1_len;
     const int longer_word_len = max(word1_len, word2_len);
     const auto diff_values = find_length_of_longest_common_subsequence(
-        begin(word1), end(word1), begin(word2), end(word2));
+        forward<iterator_type>(begin(word1)),
+        forward<iterator_type>(end(word1)),
+        forward<iterator_type>(begin(word2)),
+        forward<iterator_type>(end(word2)));
     return longer_word_len - diff_values.first + diff_values.second;
   }
 };
@@ -126,6 +130,9 @@ int main() {
   cout << "s.minDistance(\"sea\", \"eat\") -> "
        << s.minDistance(string{"sea"}, string{"eat"})
        << '\n';  // expected output: 2
+  cout << "s.minDistance(\"azlymoka\", \"alma\") -> "
+       << s.minDistance(string{"azlymoa"}, string{"alma"})
+       << '\n';  // expected output: 4
 
   return 0;
 }
