@@ -31,11 +31,10 @@ exention -> exection (replace 'n' with 'c')
 exection -> execution (insert 'u')
 */
 
-// ab, bc
-
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -45,70 +44,111 @@ static int sres = []() {
   return 0;
 }();
 
-template <typename ForwardIter>
-pair<typename std::iterator_traits<ForwardIter>::difference_type,
-     typename std::iterator_traits<ForwardIter>::difference_type>
-find_length_of_longest_common_subsequence(ForwardIter&& src_first,
-                                          ForwardIter&& src_last,
-                                          ForwardIter&& dst_first,
-                                          ForwardIter&& dst_last) {
-  using difference_type =
-      typename std::iterator_traits<ForwardIter>::difference_type;
+class Solution {
+  static size_t find_length_of_longest_common_subsequence(const string& word1,
+                                                          const string& word2) {
+    const size_t src_last{word1.length()};
+    const size_t dst_last{word2.length()};
 
-  pair<difference_type, difference_type> result{};
+    if (!src_last)
+      return dst_last;
+    if (!dst_last)
+      return src_last;
 
-  if (src_first == src_last || dst_first == dst_last)
-    return result;
+    if (string::npos != word1.find(word2))
+      return src_last - dst_last;
 
-  while (dst_first != dst_last) {
-    if (distance(dst_first, dst_last) <= result.first)
-      return result;
+    if (string::npos != word2.find(word1))
+      return dst_last - src_last;
 
-    ForwardIter src_offset{src_first}, dst_offset{dst_first};
-    difference_type seq_len{};
-    ++dst_first;
+    vector<char> fixed_word1_char_indices(src_last, 0);
+    fixed_word1_char_indices.reserve(src_last);
+    vector<char> fixed_word2_char_indices(dst_last, 0);
+    fixed_word2_char_indices.reserve(dst_last);
+    vector<char> w1_char_positions(src_last, 0);
+    w1_char_positions.reserve(src_last);
+    vector<char> w2_char_positions(dst_last, 0);
+    w2_char_positions.reserve(dst_last);
 
-    while (dst_offset != dst_last) {
-      auto found = find(src_offset, src_last, *dst_offset);
+    size_t longest_common_subsequence_len{};
+    size_t dst_first{};
 
-      if (found != src_last) {
-        seq_len++;
-        src_offset = ++found;
-      } else
+    bool found_subseq_at_end{};
+
+    while (dst_first < dst_last) {
+      if (dst_last - dst_first <= longest_common_subsequence_len)
         break;
 
-      ++dst_offset;
-      if (src_offset == src_last) {
-        if (seq_len > result.first)
-          result.first = seq_len;
-        result.second = distance(dst_offset, dst_last);
-        return result;
+      w1_char_positions.clear();
+      w2_char_positions.clear();
+
+      size_t src_offset{}, dst_offset{dst_first}, seq_len{};
+      ++dst_first;
+
+      while (dst_offset < dst_last) {
+        const size_t found{word1.find(word2[dst_offset], src_offset)};
+
+        if (string::npos != found) {
+          w1_char_positions[found] = word2[dst_offset];
+          w2_char_positions[dst_offset] = word2[dst_offset];
+          seq_len++;
+          src_offset = found + 1;
+
+        } else
+          break;
+
+        ++dst_offset;
+      }
+
+      if (seq_len > 1 && seq_len > longest_common_subsequence_len) {
+        longest_common_subsequence_len = seq_len;
+        if (dst_offset == dst_last)
+          found_subseq_at_end = true;
+        else
+          found_subseq_at_end = false;
+        if (longest_common_subsequence_len == dst_last)
+          return src_last - dst_last;
+        swap(fixed_word1_char_indices, w1_char_positions);
+        swap(fixed_word2_char_indices, w2_char_positions);
       }
     }
 
-    if (seq_len > result.first)
-      result.first = seq_len;
+    if (found_subseq_at_end)
+      return max(dst_last - longest_common_subsequence_len,
+                 src_last - longest_common_subsequence_len);
+
+    size_t operation_count{};
+    size_t src_pos{}, dst_pos{};
+
+    while (dst_pos < dst_last && src_pos < src_last) {
+      if (word2[dst_pos] == word1[src_pos]) {
+        src_pos++;
+        dst_pos++;
+      } else {
+        if (!fixed_word1_char_indices[src_pos] &&
+            !fixed_word2_char_indices[dst_pos]) {
+          operation_count++;
+          src_pos++;
+          dst_pos++;
+        } else if (fixed_word1_char_indices[src_pos]) {
+          operation_count++;
+          dst_pos++;
+        } else if (fixed_word2_char_indices[dst_pos]) {
+          operation_count++;
+          src_pos++;
+        }
+      }
+    }
+
+    operation_count += dst_last - dst_pos;
+    operation_count += src_last - src_pos;
+
+    return operation_count;
   }
 
-  return result;
-}
-
-class Solution {
  public:
   size_t minDistance(string word1, string word2) {
-    using iterator_type = decltype(begin(word1));
-    const size_t word1_len{word1.length()}, word2_len{word2.length()};
-    if (string::npos != word1.find(word2))
-      return word1_len - word2_len;
-    if (string::npos != word2.find(word1))
-      return word2_len - word1_len;
-    const int longer_word_len = max(word1_len, word2_len);
-    const auto diff_values = find_length_of_longest_common_subsequence(
-        forward<iterator_type>(begin(word1)),
-        forward<iterator_type>(end(word1)),
-        forward<iterator_type>(begin(word2)),
-        forward<iterator_type>(end(word2)));
-    return longer_word_len - diff_values.first + diff_values.second;
+    return find_length_of_longest_common_subsequence(word1, word2);
   }
 };
 
@@ -131,8 +171,17 @@ int main() {
        << s.minDistance(string{"sea"}, string{"eat"})
        << '\n';  // expected output: 2
   cout << "s.minDistance(\"azlymoka\", \"alma\") -> "
-       << s.minDistance(string{"azlymoa"}, string{"alma"})
+       << s.minDistance(string{"azlymoka"}, string{"alma"})
        << '\n';  // expected output: 4
+  cout << "s.minDistance(\"sea\", \"ate\") -> "
+       << s.minDistance(string{"sea"}, string{"ate"})
+       << '\n';  // expected output: 3
+  cout << "s.minDistance(\"neighbors\", \"nibozzz\") -> "
+       << s.minDistance(string{"neighbors"}, string{"nibozzz"})
+       << '\n';  // expected output: 6
+  cout << "s.minDistance(\"park\", \"spake\") -> "
+       << s.minDistance(string{"park"}, string{"spake"})
+       << '\n';  // expected output: 3
 
   return 0;
 }
