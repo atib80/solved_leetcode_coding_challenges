@@ -125,6 +125,8 @@ class Solution {
 int main() {
   Solution s{};
 
+  char tomb[100][5]
+
   vector<vector<char>> input{{'1', '0', '1', '0', '0'},
                              {'1', '0', '1', '1', '1'},
                              {'1', '1', '1', '1', '1'},
