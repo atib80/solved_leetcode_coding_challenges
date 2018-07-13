@@ -31,7 +31,6 @@ exention -> exection (replace 'n' with 'c')
 exection -> execution (insert 'u')
 */
 
-#include <algorithm>
 #include <iostream>
 #include <queue>
 #include <string>
@@ -80,22 +79,19 @@ class Solution {
       op_state current_op{move(q.front())};
       q.pop();
 
-      if (current_op.op_count >= min_operation_count)
-        continue;
-
       if (src_len == current_op.src_index) {
-        const size_t current_op_count{current_op.op_count + dst_len -
-                                      current_op.dst_index};
-        if (current_op_count < min_operation_count)
-          min_operation_count = current_op_count;
+        const size_t final_op_count{current_op.op_count + dst_len -
+                                    current_op.dst_index};
+        if (final_op_count < min_operation_count)
+          min_operation_count = final_op_count;
         continue;
       }
 
       if (dst_len == current_op.dst_index) {
-        const size_t current_op_count{current_op.op_count + src_len -
-                                      current_op.src_index};
-        if (current_op_count < min_operation_count)
-          min_operation_count = current_op_count;
+        const size_t final_op_count{current_op.op_count + src_len -
+                                    current_op.src_index};
+        if (final_op_count < min_operation_count)
+          min_operation_count = final_op_count;
         continue;
       }
 
@@ -106,13 +102,17 @@ class Solution {
         continue;
       }
 
-      q.emplace(current_op.src_index + 1, current_op.dst_index + 1,
-                current_op.op_count + 1);
-      q.emplace(current_op.src_index, current_op.dst_index + 1,
-                current_op.op_count + 1);
-      current_op.src_index++;
       current_op.op_count++;
-      q.emplace(move(current_op));
+
+      if (current_op.op_count < min_operation_count) {
+        q.emplace(current_op.src_index + 1, current_op.dst_index + 1,
+                  current_op.op_count);
+        q.emplace(current_op.src_index, current_op.dst_index + 1,
+                  current_op.op_count);
+
+        current_op.src_index++;
+        q.emplace(move(current_op));
+      }
     }
 
     return min_operation_count;
