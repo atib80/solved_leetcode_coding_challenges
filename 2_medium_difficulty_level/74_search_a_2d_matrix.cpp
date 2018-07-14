@@ -1,4 +1,6 @@
 /*
+74. Leetcode coding challenge: Search a 2D matrix
+
 Write an efficient algorithm that searches for a value in an m x n matrix. This
 matrix has the following properties:
 
@@ -75,6 +77,8 @@ class Solution {
     if (!matrix_height)
       return false;
     const size_t matrix_width{matrix[0].size()};
+    if (!matrix_width)
+      return false;
     if (1 == matrix_width && 1 == matrix_height) {
       if (target == matrix[0][0])
         return true;
