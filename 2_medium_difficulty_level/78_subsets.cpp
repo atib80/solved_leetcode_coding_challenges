@@ -95,16 +95,16 @@ class Solution {
     if (1 == nums_size)
       return vector<vector<int>>{{}, {nums.front()}};
 
-    sort(begin(nums), end(nums));
-
     vector<vector<int>> result_set{};
     result_set.reserve(static_cast<size_t>(pow(2u, nums_size)));
     result_set.emplace_back(vector<int>{});
 
-    for (size_t k{1}; k <= nums_size; k++) {
+    for (size_t k{1}; k <= nums_size - 1; k++) {
       vector<int> set(k);
       generate_combinations_of_n_over_k(nums, nums_size, k, set, result_set);
     }
+
+    result_set.emplace_back(move(nums));
 
     return result_set;
   }
