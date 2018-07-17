@@ -58,28 +58,26 @@ class Solution {
                [&first_char](const char ch) { return ch == first_char; }))
       return s;
 
-    vector<vector<char>> zigzag(row_count, vector<char>{});
     const size_t s_len{s.length()};
+    vector<string> zigzag(row_count);
+    for (string& str : zigzag)
+      str.reserve(s_len / 2);
 
     string result{};
     result.reserve(s_len);
     int increment{1};
 
     for (size_t i{}, row_index{}; i < s_len; i++, row_index += increment) {
-      zigzag[row_index].emplace_back(s[i]);
+      zigzag[row_index].push_back(s[i]);
       if (i && !row_index)
         increment = -increment;
       else if (row_count - 1 == row_index)
         increment = -increment;
     }
 
-    for (size_t i{}; i < zigzag.size(); i++) {
-      for (size_t j{}; j < zigzag[i].size(); j++) {
-        if (!zigzag[i][j])
-          break;
+    for (size_t i{}; i < zigzag.size(); i++)
+      for (size_t j{}; j < zigzag[i].length(); j++)
         result.push_back(zigzag[i][j]);
-      }
-    }
 
     return result;
   }

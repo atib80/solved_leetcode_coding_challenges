@@ -4,6 +4,9 @@ Given an absolute path for a file (Unix-style), simplify it.
 For example,
 path = "/home/", => "/home"
 path = "/a/./b/../../c/", => "/c"
+/c
+
+
 
 Corner Cases:
 
@@ -28,6 +31,7 @@ static int sres = []() {
 class Solution {
  public:
   string simplifyPath(string path) {
+
     if ('/' != path.back())
       path.push_back('/');
     const size_t path_len{path.length()};
@@ -50,7 +54,7 @@ class Solution {
 
       const string path_segment{path.substr(start, next - start)};
 
-      if (".." == path_segment) {
+      if (".." == path_segment && apsolute_path.length() > 1) {
         const size_t pos{apsolute_path.rfind('/', apsolute_path.length() - 2)};
         if (string::npos != pos)
           apsolute_path.erase(pos + 1);
