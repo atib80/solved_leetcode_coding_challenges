@@ -93,6 +93,9 @@ class Solution {
       i++;
     }
 
+    if (count > 2)
+      nums.erase(begin(nums) + first_value_pos + 2, end(nums));
+
     return nums.size();
   }
 };
@@ -103,9 +106,18 @@ int main() {
   vector<int> numbers{1, 1, 1, 2, 2, 3};
   cout << "numbers.size() before removing duplicates: " << numbers.size()
        << '\n';
-  const size_t numbers_size{s.removeDuplicates(numbers)};
+  s.removeDuplicates(numbers);
   cout << "numbers.size() after removing duplicates: " << numbers.size()
        << '\n';
-  cout << "s.removeDuplicates({1,1,1,2,2,3}) -> " << numbers << '\n';
+  cout << "s.removeDuplicates({1,1,1,2,2,3}) -> " << numbers << "\n\n";
+
+  numbers.assign({1, 1, 1});
+  cout << "numbers.size() before removing duplicates: " << numbers.size()
+       << '\n';
+  s.removeDuplicates(numbers);
+  cout << "numbers.size() after removing duplicates: " << numbers.size()
+       << '\n';
+  cout << "s.removeDuplicates({1,1,1}) -> " << numbers << '\n';
+
   return 0;
 }
