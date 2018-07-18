@@ -71,6 +71,8 @@ ostream& operator<<(ostream& os, const vector<vector<T>>& data) {
 }
 
 class Solution {
+  static size_t max(const size_t x, const size_t y) { return x > y ? x : y; }
+
  public:
   vector<vector<int>> subsets(vector<int>& nums) {
     const size_t nums_size{nums.size()};
@@ -85,7 +87,7 @@ class Solution {
 
     sort(begin(nums), end(nums));
 
-    for (size_t k{1}; k <= nums_size - 1; k++) {
+    for (size_t k{1}; k <= nums_size; k++) {
       vector<int> set(k);
       vector<size_t> indices(k);
       vector<size_t> initial_indices(k);
@@ -126,8 +128,6 @@ class Solution {
       }
     }
 
-    result_set.emplace_back(move(nums));
-
     return result_set;
   }
 };
@@ -142,6 +142,20 @@ int main() {
   input.assign({1, 2, 3, 4});
   output = s.subsets(input);
   cout << "s.subsets({1,2,3,4}) -> " << output << '\n';
+  input.assign({9, 0, 3, 5, 7});
+  output = s.subsets(input);
+  cout << "s.subsets({9,0,3,5,7}) -> " << output << '\n';
+
+  /*
+  Input: [9,0,3,5,7]
+Output:
+[[],[0],[3],[5],[7],[9],[0,3],[0,5],[0,7],[0,9],[3,5],[3,7],[3,9],[5,7],[5,9],[7,9],[0,3,5],[0,3,7],[0,3,9],[0,5,7],
+           [0,5,9],[0,7,9],[3,5,9],[3,7,9],[5,7,9],[3,7,9],[0,3,5,7],[0,3,5,9],[0,3,7,9],[0,5,7,9],[3,5,7,9],[0,3,5,7,9]]
+
+Expected:
+[[],[9],[0],[0,9],[3],[3,9],[0,3],[0,3,9],[5],[5,9],[0,5],[0,5,9],[3,5],[3,5,9],[0,3,5],[0,3,5,9],[7],[7,9],[0,7],
+           [0,7,9],[3,7],[3,7,9],[0,3,7],[0,3,7,9],[5,7],[5,7,9],[0,5,7],[0,5,7,9],[3,5,7],[3,5,7,9],[0,3,5,7],[0,3,5,7,9]]
+  */
 
   return 0;
 }

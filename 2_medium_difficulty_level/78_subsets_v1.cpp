@@ -120,6 +120,9 @@ int main() {
   input.assign({1, 2, 3, 4});
   output = s.subsets(input);
   cout << "s.subsets({1,2,3,4}) -> " << output << '\n';
+  input.assign({9, 0, 3, 5, 7});
+  output = s.subsets(input);
+  cout << "s.subsets({9,0,3,5,7}) -> " << output << '\n';
 
   return 0;
 }
