@@ -42,9 +42,7 @@ constexpr static const int64_t input_min{-2147483648LL},
 class Solution {
  public:
   int reverse(int x) {
-    int multiplier{1};
-    if (x < 0)
-      multiplier = -1;
+    bool is_negative{x < 0};
     x = abs(x);
 
     int64_t output{};
@@ -55,8 +53,11 @@ class Solution {
       x /= 10;
     }
 
-    output *= multiplier;
-
+    if (is_negative) {
+      output = ~output;
+      ++output;
+    }
+    
     if (output < input_min || output > input_max)
       return 0;
 
