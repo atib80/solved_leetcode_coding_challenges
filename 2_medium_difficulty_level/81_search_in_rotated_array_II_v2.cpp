@@ -1,5 +1,9 @@
 /*
-81. Leetcode coding challenge: Search in rotated array II
+81. Leetcode coding challenge: Search in rotated array II (version 2)
+
+Alternative solution is implemented by running 1 or 2 binary search operations
+on the input sorted range depending upon whether the smallest element (pivot
+value) is located at an index greater than 0.
 
 Suppose an array sorted in ascending order is rotated at some pivot unknown to
 you beforehand.
