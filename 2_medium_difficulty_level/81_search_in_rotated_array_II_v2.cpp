@@ -25,7 +25,6 @@ This is a follow up problem to Search in Rotated Sorted Array, where nums
 may contain duplicates. Would this affect the run-time complexity? How and why?
 */
 
-#include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <vector>
