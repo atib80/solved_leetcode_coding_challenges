@@ -44,10 +44,10 @@ ostream& operator<<(ostream& os, const vector<T>& data) {
     os << "data is empty\n";
     return os;
   }
-  os << "\n[";
+  os << "\n  [";
   for (size_t i{}; i < data.size() - 1; i++)
     os << data[i] << ',';
-  os << data.back() << "]\n";
+  os << data.back() << "]";
   return os;
 }
 
@@ -57,18 +57,11 @@ ostream& operator<<(ostream& os, const vector<vector<T>>& data) {
     os << "data is empty\n";
     return os;
   }
-  os << "\n[\n";
-  for (size_t i{}; i < data.size() - 1; i++) {
-    os << "  [";
-    for (size_t j{}; j < data[i].size() - 1; j++)
-      os << data[i][j] << ',';
-    os << data[i].back() << "],\n";
-  }
 
-  os << "  [";
-  for (size_t j{}; j < data.back().size() - 1; j++)
-    os << data.back()[j] << ',';
-  os << data.back().back() << "]\n]\n";
+  os << "\n[\n";
+  for (const auto& row : data)
+    os << row;
+  os << "\n]\n";
 
   return os;
 }
