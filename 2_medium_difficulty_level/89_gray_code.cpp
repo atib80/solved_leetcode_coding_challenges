@@ -33,8 +33,8 @@ is 20 = 1. Therefore, for n = 0 the gray code sequence is [0].
 
 */
 
+#include <algorithm>
 #include <iostream>
-#include <unordered_set>
 #include <vector>
 
 using namespace std;
@@ -54,40 +54,55 @@ ostream& operator<<(ostream& os, const vector<T>& data) {
 
 class Solution {
  public:
-  vector<int> grayCode(const int n) {
+  vector<int> grayCode(const size_t n) {
     if (!n)
       return vector<int>{0};
     if (1 == n)
       return vector<int>{0, 1};
 
-    const int count{1 << n};
-    vector<int> gray_codes{0}, valid_masks{};
-    vector<int> unique_grey_codes(count, 0);
-    unique_grey_codes[0] = 1;
+    const size_t count{1u << n};
+    vector<int> gray_codes{}, valid_masks{};
     gray_codes.reserve(count);
     valid_masks.reserve(n);
 
     int value{};
 
-    for (int i{}, mask{1}; i < n; i++) {
+    for (size_t i{}, mask{1}; i < n; i++) {
       valid_masks.emplace_back(mask);
       mask <<= 1;
     }
 
-    int prev_used_mask{};
-    for (int i{}; i < count; i++) {
-      for (const int m : valid_masks) {
-        if (m == prev_used_mask)
-          continue;
-        const int gc{value ^ m};
-        if (unique_grey_codes[gc])
-          continue;
-        value = gc;
-        prev_used_mask = m;
-        unique_grey_codes[gc] = 1;
-        gray_codes.emplace_back(gc);        
+    do {
+      gray_codes.clear();
+      gray_codes.emplace_back(0);
+      vector<int> unique_grey_codes(count, 0);
+      unique_grey_codes[0] = 1;
+      int prev_used_mask{};
+
+      while (true) {
+        bool found{};
+        for (const int m : valid_masks) {
+          if (m == prev_used_mask)
+            continue;
+          const int gc{value ^ m};
+          if (unique_grey_codes[gc])
+            continue;
+          value = gc;
+          prev_used_mask = m;
+          unique_grey_codes[gc] = 1;
+          gray_codes.emplace_back(gc);
+          found = true;
+          break;
+        }
+
+        if (!found)
+          break;
+
+        if (gray_codes.size() == count)
+          return gray_codes;
       }
-    }
+
+    } while (next_permutation(begin(valid_masks), end(valid_masks)));
 
     return gray_codes;
   }
