@@ -30,7 +30,7 @@ ostream& operator<<(ostream& os, const vector<T>& data) {
     os << "data is empty\n";
     return os;
   }
-  os << "\n  [";
+  os << "[";
   for (size_t i{}; i < data.size() - 1; i++)
     os << data[i] << ',';
   os << data.back() << "]";
@@ -46,8 +46,8 @@ class Solution {
     const size_t m_plus_n{m + n};
     if (nums1.size() < m_plus_n)
       nums1.resize(m_plus_n);
-    move(begin(nums2), begin(nums2) + n, begin(nums1) + m);
-    inplace_merge(begin(nums1), begin(nums1) + m, begin(nums1) + m + n);
+    copy(begin(nums2), begin(nums2) + n, begin(nums1) + m);
+    inplace_merge(begin(nums1), begin(nums1) + m, begin(nums1) + m_plus_n);
   }
 };
 
