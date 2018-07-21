@@ -90,7 +90,6 @@ class Solution {
     for (size_t k{1}; k <= nums_size; k++) {
       vector<int> set(k);
       vector<size_t> indices(k);
-      vector<size_t> initial_indices(k);
 
       size_t rep{nums_size};
       for (size_t i{nums_size - 1}; i > max(1u, nums_size - k); i--)
@@ -100,30 +99,30 @@ class Solution {
         divisor *= i;
       rep /= divisor;
 
-      for (size_t i{}; i < k; i++) {
+      for (size_t i{}; i < k; i++)
         indices[i] = i;
-        initial_indices[i] = i;
-      }
 
       for (size_t c{}; c < rep; c++) {
         for (size_t i{}; i < indices.size(); i++)
           set[i] = nums[indices[i]];
         result_set.emplace_back(set);
 
-        for (int i = k - 1, j{}; i >= 0; i--, j++) {
-          if (nums_size - 1 - j == indices[i]) {
-            if (initial_indices[i] < nums_size - 1 - j) {
-              initial_indices[i]++;
-              indices[i] = initial_indices[i];
-            }
+        bool carry{};
 
-            if (!i && initial_indices[i] > nums_size - k)
-              break;
-
-          } else {
-            indices[i]++;
+        for (int i = k - 1, offset{}; i >= 0; i--, offset++) {
+          if (!i && indices[i] > nums_size - k)
             break;
+          if (nums_size - 1 - offset == indices[i]) {
+            carry = true;
+            continue;
           }
+
+          indices[i]++;
+          if (carry) {
+            for (size_t x = i + 1; x < k; x++)
+              indices[x] = indices[x - 1] + 1;
+          }
+          break;
         }
       }
     }
