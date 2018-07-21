@@ -99,7 +99,6 @@ class Solution {
     for (size_t k{1}; k <= nums_size; k++) {
       vector<int> set(k, 0);
       vector<size_t> indices(k);
-      vector<size_t> initial_indices(k);
 
       size_t rep{nums_size};
       for (size_t i{nums_size - 1}; i > max(1u, nums_size - k); i--)
@@ -109,10 +108,8 @@ class Solution {
         divisor *= i;
       rep /= divisor;
 
-      for (size_t i{}; i < k; i++) {
+      for (size_t i{}; i < k; i++)
         indices[i] = i;
-        initial_indices[i] = i;
-      }
 
       for (size_t c{}; c < rep; c++) {
         for (size_t i{}; i < indices.size(); i++)
@@ -125,6 +122,11 @@ class Solution {
         }
 
         bool carry{};
+
+        // shift indices one at a time according to their currently set
+        // positions if an index reaches its maximum allowed position, increase
+        // the value of the previous index and reset all the following indices
+        // to their new initial positions
 
         for (int i = k - 1, offset{}; i >= 0; i--, offset++) {
           if (!i && indices[i] > nums_size - k)
