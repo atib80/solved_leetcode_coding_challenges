@@ -13,23 +13,12 @@ Input:  head = 1->4->3->2->5->2, x = 3
 Output: 1->2->2->4->3->5
 */
 
-#include <iomanip>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 
-template <typename... Args>
-void unused(Args&&...) {}
-
-static int sres = []() {
-  ios::sync_with_stdio(false);
-  cin.tie(nullptr);
-  return 0;
-}();
-
-// Definition for singly-linked list.
 struct ListNode {
   int val;
   ListNode* next{};
@@ -68,26 +57,23 @@ class Solution {
         }
 
         current = next;
-        continue;
 
       } else {
-        if (!start) {
-          new_head = current;
-          start = new_head;
-        } else {
+        if (!start)
+          new_head = start = current;
+        else {
           start->next = current;
           start = start->next;
         }
-      }
 
-      current = current->next;
+        current = current->next;
+      }
     }
 
     if (!start)
       return greater_equal_nodes_start;
 
     start->next = greater_equal_nodes_start;
-
     return new_head;
   }
 };
@@ -109,7 +95,7 @@ int main() {
     list[i].next = &list[i + 1];
   head = s.partition(&list[0], 0);
   cout << "s.partition({ 1, 1 }, 0) -> ";
-  pretty_print(head, cout);  // expected output: nullptr
+  pretty_print(head, cout);  // expected output: 1->1->nullptr
   cout << '\n';
 
   return 0;
