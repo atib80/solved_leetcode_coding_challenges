@@ -42,7 +42,7 @@ using namespace std;
 
 class Solution {
   template <typename... Args>
-  common_type_t<Args...> min(Args&&... args) {
+  static common_type_t<Args...> min(Args&&... args) {
     const auto values =
         vector<common_type_t<Args...>>{std::forward<Args>(args)...};
     return *min_element(cbegin(values), cend(values));
@@ -58,24 +58,19 @@ class Solution {
     if (!dst_len)
       return src_len;
 
-    if (string::npos != word1.find(word2))
-      return src_len - dst_len;
-    if (string::npos != word2.find(word1))
-      return dst_len - src_len;
-
     vector<vector<int>> dp(dst_len + 1, vector<int>(src_len + 1, 0));
-    for (size_t i{1}; i < std::min(src_len, dst_len); i++) {
+    for (size_t i{1}; i <= std::min(src_len, dst_len); i++) {
       dp[0][i] = i;
       dp[i][0] = i;
     }
 
-    bool is_src_len_bigger{src_len > dst_len};
-
-    for (size_t i{std::min(src_len, dst_len)}; i < std::max(src_len, dst_len);
-         i++) {
-      if (is_src_len_bigger)
+    if (src_len > dst_len) {
+      for (size_t i{std::min(src_len, dst_len)}; i <= max(src_len, dst_len);
+           i++)
         dp[0][i] = i;
-      else
+    } else {
+      for (size_t i{std::min(src_len, dst_len)}; i <= max(src_len, dst_len);
+           i++)
         dp[i][0] = i;
     }
 
@@ -84,7 +79,8 @@ class Solution {
         if (word2[i - 1] == word1[j - 1])
           dp[i][j] = dp[i - 1][j - 1];
         else
-          dp[i][j] = min(dp[i][j - 1], dp[i - 1][j - 1], dp[i - 1][j]) + 1;
+          dp[i][j] =
+              Solution::min(dp[i][j - 1], dp[i - 1][j - 1], dp[i - 1][j]) + 1;
       }
     }
 
@@ -127,6 +123,9 @@ int main() {
   cout << "s.minDistance(\"industry\", \"interest\") -> "
        << s.minDistance(string{"industry"}, string{"interest"})
        << '\n';  // expected output: 6
+  cout << "s.minDistance(\"distance\", \"springbok\") -> "
+       << s.minDistance(string{"distance"}, string{"springbok"})
+       << '\n';  // expected output: 9
 
   return 0;
 }
