@@ -40,19 +40,9 @@ class Solution {
     if (!s_len || '0' == s.front())
       return 0;
 
-    if (s_len > 1) {
-      bool found{true};
-
-      for (size_t i{}; i < s_len - 1; i += 2) {
-        if ('1' == s[i] && '0' == s[i + 1])
-          continue;
-        found = false;
-        break;
-      }
-
-      if (found)
-        return 1;
-    }
+    if (s_len > 3 && s_len % 2 == 0 && '1' == s[0] && '0' == s[1] &&
+        '1' == s[s_len - 2] && '0' == s[s_len - 1])
+      return 1;
 
     queue<size_t> q{{0}};
     size_t count{};
@@ -72,8 +62,9 @@ class Solution {
       if (pos + 1 <= s_len)
         q.emplace(pos + 1);
 
-      if ((pos + 2 <= s_len) && ('1' == s[pos] || '2' == s[pos]) &&
-          (s[pos + 1] >= '0' && s[pos + 1] <= '9'))
+      if ((pos + 2 <= s_len) &&
+          (('1' == s[pos] && s[pos + 1] >= '0' && s[pos + 1] <= '9') ||
+           ('2' == s[pos] && s[pos + 1] >= '0' && s[pos + 1] <= '6')))
         q.emplace(pos + 2);
     }
 
@@ -98,6 +89,10 @@ int main() {
        << '\n';  // expected output: 1
   cout << "s.numDecodings(\"1224\") -> " << s.numDecodings("1224")
        << '\n';  // expected output: 5
+  cout << "s.numDecodings(\"27\") -> " << s.numDecodings("27")
+       << '\n';  // expected output: 1
+  cout << "s.numDecodings(\"100\") -> " << s.numDecodings("100")
+       << '\n';  // expected output: 0
 
   const string large_input{
       "101010101010101010101010101010101010101010101010101010101010101010101010"
