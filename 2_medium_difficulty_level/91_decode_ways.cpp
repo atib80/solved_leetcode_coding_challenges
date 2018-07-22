@@ -36,10 +36,8 @@ class Solution {
  public:
   size_t numDecodings(const string& s) {
     const size_t s_len{s.length()};
-    queue<size_t> q{{0u}};
-    size_t count{};
 
-    if ('0' == s.front())
+    if (!s_len || '0' == s.front())
       return 0;
 
     if (s_len > 1) {
@@ -56,6 +54,9 @@ class Solution {
         return 1;
     }
 
+    queue<size_t> q{{0}};
+    size_t count{};
+
     while (!q.empty()) {
       size_t pos{q.front()};
       q.pop();
@@ -71,12 +72,9 @@ class Solution {
       if (pos + 1 <= s_len)
         q.emplace(pos + 1);
 
-      if (pos + 2 <= s_len) {
-        const size_t ascii{static_cast<size_t>(s[pos] - '0') * 10 +
-                           static_cast<size_t>(s[pos + 1] - '0')};
-        if (ascii >= 10 && ascii <= 26)
-          q.emplace(pos + 2);
-      }
+      if ((pos + 2 <= s_len) && ('1' == s[pos] || '2' == s[pos]) &&
+          (s[pos + 1] >= '0' && s[pos + 1] <= '9'))
+        q.emplace(pos + 2);
     }
 
     return count;
