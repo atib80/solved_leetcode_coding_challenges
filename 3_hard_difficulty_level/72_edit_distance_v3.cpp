@@ -33,6 +33,7 @@ exection -> execution (insert 'u')
 */
 
 #include <algorithm>
+#include <initializer_list>
 #include <iostream>
 #include <string>
 #include <type_traits>
@@ -43,8 +44,8 @@ using namespace std;
 class Solution {
   template <typename... Args>
   static common_type_t<Args...> min(Args&&... args) {
-    const auto values =
-        vector<common_type_t<Args...>>{std::forward<Args>(args)...};
+    const initializer_list<common_type_t<Args...>> values{
+        std::forward<Args>(args)...};
     return *min_element(cbegin(values), cend(values));
   }
 
