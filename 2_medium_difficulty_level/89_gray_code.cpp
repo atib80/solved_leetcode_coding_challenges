@@ -65,8 +65,6 @@ class Solution {
     gray_codes.reserve(count);
     valid_masks.reserve(n);
 
-    int value{};
-
     for (size_t i{}, mask{1}; i < n; i++) {
       valid_masks.emplace_back(mask);
       mask <<= 1;
@@ -77,6 +75,7 @@ class Solution {
       gray_codes.emplace_back(0);
       vector<int> unique_grey_codes(count, 0);
       unique_grey_codes[0] = 1;
+      int value{};
       int prev_used_mask{};
 
       while (true) {
