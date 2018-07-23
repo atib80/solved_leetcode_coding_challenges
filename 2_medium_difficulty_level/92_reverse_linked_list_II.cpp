@@ -40,7 +40,7 @@ class Solution {
     if (!head || nullptr == head->next || m >= n)
       return head;
 
-    ListNode *start{}, *current{head}, *sub_list_end;
+    ListNode *start{}, *current{head};
 
     int position{1};
 
@@ -52,7 +52,8 @@ class Solution {
       position++;
     }
 
-    ListNode* sub_list_start = sub_list_end = current;
+    ListNode *sub_list_start, *sub_list_end;
+    sub_list_start = sub_list_end = current;
     current = current->next;
     ListNode* next{current};
 
@@ -78,12 +79,11 @@ class Solution {
 
     sub_list_end->next = next;
 
-    if (start)
+    if (start) {
       start->next = sub_list_start;
-    else
+      return head;
+    } else
       return sub_list_start;
-
-    return head;
   }
 };
 
