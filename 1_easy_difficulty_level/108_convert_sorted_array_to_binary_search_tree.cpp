@@ -73,35 +73,24 @@ struct TreeNode {
 };
 
 class Solution {
-  static void construct_height_balanced_bst(TreeNode* root, const int value) {
-    queue<TreeNode*> q{{root}};
+  static TreeNode* construct_height_balanced_bst(
+      const vector<int>& sorted_numbers,
+      const int start,
+      const int end) {
+    if (start > end)
+      return nullptr;
 
-    while (!q.empty()) {
-      TreeNode* node{q.front()};
-      q.pop();
+    const int middle{(start + end) / 2};
 
-      if (value < node->val) {
-        if (nullptr == node->left) {
-          node->left = new TreeNode{value};
-          break;
-        }
+    TreeNode* root{new TreeNode{sorted_numbers[middle]}};
 
-        if (value < node->left->val)
-          q.emplace(node->left);
-        else
-          q.emplace(node->right);
-      } else {
-        if (nullptr == node->right) {
-          node->right = new TreeNode{value};
-          break;
-        }
+    root->left =
+        construct_height_balanced_bst(sorted_numbers, start, middle - 1);
 
-        if (value < node->right->val)
-          q.emplace(node->left);
-        else
-          q.emplace(node->right);
-      }
-    }
+    root->right =
+        construct_height_balanced_bst(sorted_numbers, middle + 1, end);
+
+    return root;
   }
 
  public:
@@ -116,28 +105,7 @@ class Solution {
       return root_node;
     }
 
-    if (2 == nums_size) {
-      TreeNode* root_node = new TreeNode{nums[0]};
-      root_node->left = new TreeNode{nums[1]};
-      return root_node;
-    }
-
-    if (3 == nums_size) {
-      TreeNode* root_node = new TreeNode{nums[1]};
-      root_node->left = new TreeNode{nums[0]};
-      root_node->right = new TreeNode{nums[2]};
-      return root_node;
-    }
-
-    TreeNode* root_node = new TreeNode{nums[nums_size / 2]};
-
-    for (int i = nums_size / 2 - 1; i >= 0; i--) {
-      construct_height_balanced_bst(root_node, nums[i]);
-    }
-
-    for (size_t i{nums_size / 2 + 1}; i < nums_size; i++) {
-      construct_height_balanced_bst(root_node, nums[i]);
-    }
+    TreeNode* root_node{construct_height_balanced_bst(nums, 0, nums_size - 1)};
 
     return root_node;
   }
