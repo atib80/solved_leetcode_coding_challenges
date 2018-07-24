@@ -23,6 +23,7 @@ height balanced BST:
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <queue>
 #include <string>
 #include <vector>
@@ -64,15 +65,10 @@ struct TreeNode {
   TreeNode* right;
   TreeNode(const int x) : val{x}, left{}, right{} {}
   virtual ~TreeNode() {
-    if (left) {
-      cout << "Deleting left node ...\n";
+    if (left)
       delete left;
-    }
-
-    if (right) {
-      cout << "Deleting right node ...\n";
+    if (right)
       delete right;
-    }
   }
 };
 
@@ -111,6 +107,27 @@ class Solution {
  public:
   TreeNode* sortedArrayToBST(const vector<int>& nums) {
     const size_t nums_size{nums.size()};
+
+    if (!nums_size)
+      return nullptr;
+
+    if (1 == nums_size) {
+      TreeNode* root_node = new TreeNode{nums[0]};
+      return root_node;
+    }
+
+    if (2 == nums_size) {
+      TreeNode* root_node = new TreeNode{nums[0]};
+      root_node->left = new TreeNode{nums[1]};
+      return root_node;
+    }
+
+    if (3 == nums_size) {
+      TreeNode* root_node = new TreeNode{nums[1]};
+      root_node->left = new TreeNode{nums[0]};
+      root_node->right = new TreeNode{nums[2]};
+      return root_node;
+    }
 
     TreeNode* root_node = new TreeNode{nums[nums_size / 2]};
 
@@ -154,8 +171,8 @@ class Solution {
 int main() {
   Solution s{};
   const vector<int> input{-10, -3, 0, 5, 9};
-  TreeNode* root_node{s.sortedArrayToBST(input)};
-  const vector<vector<int>> output{s.levelOrderTraversal(root_node)};
+  unique_ptr<TreeNode> root_node{s.sortedArrayToBST(input)};
+  const vector<vector<int>> output{s.levelOrderTraversal(root_node.get())};
   cout << "s.sortedArrayToBST({-10,-3,0,5,9}) -> " << output << '\n';
 
   return 0;
