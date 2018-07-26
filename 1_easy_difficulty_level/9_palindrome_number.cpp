@@ -47,17 +47,39 @@ class Solution {
 
     return x == reversed_x;
   }
+
+  bool isPalindrome_v2(const int64_t x) {
+    if (x < 0LL)
+      return false;
+
+    int64_t high_exp{10LL}, low_exp{1L};
+
+    while (high_exp <= x)
+      high_exp *= 10;
+    high_exp /= 10;
+
+    while (high_exp >= low_exp) {
+      if (x / high_exp % 10 != x / low_exp % 10)
+        return false;
+      high_exp /= 10;
+      low_exp *= 10;
+    }
+
+    return true;
+  }
 };
 
 int main() {
   Solution s{};
 
-  cout << boolalpha << "s.isPalindrome(121) -> " << s.isPalindrome(121)
+  cout << boolalpha << "s.isPalindrome_v2(121) -> " << s.isPalindrome_v2(121)
        << '\n'  // expected output: true
-       << "s.isPalindrome(-121) -> " << s.isPalindrome(-121)
+       << "s.isPalindrome_v2(-121) -> " << s.isPalindrome_v2(-121)
        << '\n'  // expected output: false
-       << "s.isPalindrome(10) -> " << s.isPalindrome(10)
-       << '\n';  // expected output: false
+       << "s.isPalindrome_v2(10) -> " << s.isPalindrome_v2(10)
+       << '\n'  // expected output: false
+       << "s.isPalindrome_v2(8) -> " << s.isPalindrome_v2(8)
+       << '\n';  // expected output: true
 
   return 0;
 }
