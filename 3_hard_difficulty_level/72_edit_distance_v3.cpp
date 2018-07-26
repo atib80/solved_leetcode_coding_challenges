@@ -50,7 +50,7 @@ class Solution {
   }
 
  public:
-  size_t minDistance(string word1, string word2) {
+  size_t minDistance(const string& word1, const string& word2) {
     const size_t src_len{word1.length()};
     const size_t dst_len{word2.length()};
 
@@ -93,39 +93,39 @@ int main() {
   Solution s{};
 
   cout << "s.minDistance(\"\", \"a\") -> "
-       << s.minDistance(string{""}, string{"a"}) << '\n';  // expected output: 1
+       << s.minDistance("", "a") << '\n';  // expected output: 1
   cout << "s.minDistance(\"horse\", \"ros\") -> "
-       << s.minDistance(string{"horse"}, string{"ros"})
+       << s.minDistance("horse", "ros")
        << '\n';  // expected output: 3
   cout << "s.minDistance(\"intention\", \"execution\") -> "
-       << s.minDistance(string{"intention"}, string{"execution"})
+       << s.minDistance("intention", "execution")
        << '\n';  // expected output: 5
   cout << "s.minDistance(\"ab\", \"bc\") -> "
-       << s.minDistance(string{"ab"}, string{"bc"})
+       << s.minDistance("ab", "bc")
        << '\n';  // expected output: 2
   cout << "s.minDistance(\"a\", \"a\") -> "
-       << s.minDistance(string{"a"}, string{"a"})
+       << s.minDistance("a", "a")
        << '\n';  // expected output: 0
   cout << "s.minDistance(\"sea\", \"eat\") -> "
-       << s.minDistance(string{"sea"}, string{"eat"})
+       << s.minDistance("sea", "eat")
        << '\n';  // expected output: 2
   cout << "s.minDistance(\"azlymoka\", \"alma\") -> "
-       << s.minDistance(string{"azlymoka"}, string{"alma"})
+       << s.minDistance("azlymoka", "alma")
        << '\n';  // expected output: 4
   cout << "s.minDistance(\"sea\", \"ate\") -> "
-       << s.minDistance(string{"sea"}, string{"ate"})
+       << s.minDistance("sea", "ate")
        << '\n';  // expected output: 3
   cout << "s.minDistance(\"neighbors\", \"nibozzz\") -> "
-       << s.minDistance(string{"neighbors"}, string{"nibozzz"})
+       << s.minDistance("neighbors", "nibozzz")
        << '\n';  // expected output: 6
   cout << "s.minDistance(\"park\", \"spake\") -> "
-       << s.minDistance(string{"park"}, string{"spake"})
+       << s.minDistance("park", "spake")
        << '\n';  // expected output: 3
   cout << "s.minDistance(\"industry\", \"interest\") -> "
-       << s.minDistance(string{"industry"}, string{"interest"})
+       << s.minDistance("industry", "interest")
        << '\n';  // expected output: 6
   cout << "s.minDistance(\"distance\", \"springbok\") -> "
-       << s.minDistance(string{"distance"}, string{"springbok"})
+       << s.minDistance("distance", "springbok")
        << '\n';  // expected output: 9
 
   return 0;
