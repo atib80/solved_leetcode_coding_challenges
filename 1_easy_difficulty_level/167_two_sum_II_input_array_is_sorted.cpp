@@ -39,6 +39,7 @@ ostream& operator<<(ostream& os, const vector<T>& data) {
 class Solution {
  public:
   vector<int> twoSum(const vector<int>& numbers, const int target) {
+  	
     int first{}, second{static_cast<int>(numbers.size()) - 1};
     while (first < second) {
       if (numbers[first] + numbers[second] == target)
