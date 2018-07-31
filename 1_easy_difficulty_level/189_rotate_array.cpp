@@ -53,7 +53,7 @@ high_resolution_clock::time_point get_current_time_point() {
   return high_resolution_clock::now();
 }
 
-double calculate_elapsed_time(high_resolution_clock::time_point const& start) {
+double calculate_elapsed_time(const high_resolution_clock::time_point& start) {
   return duration_cast<duration<double>>(get_current_time_point() - start)
       .count();
 }
@@ -63,7 +63,7 @@ class Solution {
   void rotate(vector<int>& nums, size_t k) {
     const size_t nums_size{nums.size()};
 
-    if (!nums_size || 1u == nums_size || k == nums_size)
+    if (nums_size < 2u || k == nums_size)
       return;
 
     if (k > nums_size)
@@ -91,7 +91,8 @@ class Solution {
     //   deq.pop_back();
     //   deq.push_front(last_num);
     // }
-    // nums.assign(make_move_iterator(begin(deq)), make_move_iterator(end(deq)));
+    // nums.assign(make_move_iterator(begin(deq)),
+    // make_move_iterator(end(deq)));
   }
 };
 
