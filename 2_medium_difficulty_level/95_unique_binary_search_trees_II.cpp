@@ -81,24 +81,6 @@ struct TreeNode {
       right = nullptr;
     }
   }
-
-  bool insert_node_with_value(const int value) {
-    if (value < val) {
-      if (!left) {
-        left = new TreeNode(value);
-        return true;
-      } else if (left->insert_node_with_value(value))
-        return true;
-    } else {
-      if (!right) {
-        right = new TreeNode(value);
-        return true;
-      } else if (right->insert_node_with_value(value))
-        return true;
-    }
-
-    return false;
-  }
 };
 
 class Solution {
@@ -112,28 +94,39 @@ class Solution {
     return result;
   }
 
-  // static void generate_binary_search_tree(const int current, const int last,
-  // vector<int>& visited_numbers, TreeNode* root) {
+  bool insert_node_with_value(TreeNode*& root, const int value) {
+    if (value < root->val) {
+      if (!root->left) {
+        root->left = new TreeNode(value);
+        return true;
+      } else if (insert_node_with_value(root->left, value))
+        return true;
+    } else {
+      if (!root->right) {
+        root->right = new TreeNode(value);
+        return true;
+      } else if (insert_node_with_value(root->right, value))
+        return true;
+    }
 
-  // 	for (int i{current}; i <= last; i++) {
-  // 		if (visited_numbers[i]) continue;
-  // 		visited_numbers[i] = 1;
-  // 		root->insert_node_with_value(i);
-  // 		generate_binary_search_tree(current + 1, last, visited_numbers,
-  // root); 		visited_numbers[i] = 0;
-  // 	}
-  // }
+    return false;
+  }
+
  public:
   vector<TreeNode*> generateTrees(const int n) {
+    if (!n)
+      return {};
+    if (1 == n) {
+      TreeNode* root = new TreeNode{1};
+      return {root};
+    }
+
     const int min_value{min(1, n)};
-    // const int max_value{max(1, n)};
     const size_t dim{static_cast<size_t>(abs(n - 1) + 1)};
     const size_t permutation_count{factorial(dim)};
 
     vector<TreeNode*> binary_search_trees{};
     binary_search_trees.reserve(permutation_count);
-    // vector<vector<int>> result_set{};
-    // result_set.reserve(permutation_count);
     vector<int> set(dim);
 
     for (size_t i{}; i < dim; i++)
@@ -142,11 +135,9 @@ class Solution {
     unordered_set<string> already_created_binary_search_trees{};
 
     do {
-      // result_set.emplace_back(set);
       TreeNode* root = new TreeNode{set.front()};
-      for (size_t i{1}; i < dim; i++) {
-        root->insert_node_with_value(set[i]);
-      }
+      for (size_t i{1}; i < dim; i++)
+        insert_node_with_value(root, set[i]);
 
       const string index{preorder_traversal(root)};
 
@@ -194,8 +185,18 @@ class Solution {
 
 int main() {
   Solution s{};
-  vector<TreeNode*> generated_bst1{s.generateTrees(3)};
-  cout << "s.generated_bst(3) -> \n";
+
+  vector<TreeNode*> generated_bst0{s.generateTrees(0)};
+  cout << "s.generated_bst(0) -> \n";
+  for (auto& root : generated_bst0) {
+    const string bst_str{s.preorder_traversal(root)};
+    cout << bst_str << '\n';
+    delete root;
+    root = nullptr;
+  }
+
+  vector<TreeNode*> generated_bst1{s.generateTrees(1)};
+  cout << "\ns.generated_bst(1) -> \n";
   for (auto& root : generated_bst1) {
     const string bst_str{s.preorder_traversal(root)};
     cout << bst_str << '\n';
@@ -203,9 +204,36 @@ int main() {
     root = nullptr;
   }
 
-  vector<TreeNode*> generated_bst2{s.generateTrees(5)};
-  cout << "s.generated_bst(5) -> \n";
+  vector<TreeNode*> generated_bst2{s.generateTrees(2)};
+  cout << "\ns.generated_bst(3) -> \n";
   for (auto& root : generated_bst2) {
+    const string bst_str{s.preorder_traversal(root)};
+    cout << bst_str << '\n';
+    delete root;
+    root = nullptr;
+  }
+
+  vector<TreeNode*> generated_bst3{s.generateTrees(3)};
+  cout << "\ns.generated_bst(3) -> \n";
+  for (auto& root : generated_bst3) {
+    const string bst_str{s.preorder_traversal(root)};
+    cout << bst_str << '\n';
+    delete root;
+    root = nullptr;
+  }
+
+  vector<TreeNode*> generated_bst4{s.generateTrees(4)};
+  cout << "\ns.generated_bst(4) -> \n";
+  for (auto& root : generated_bst4) {
+    const string bst_str{s.preorder_traversal(root)};
+    cout << bst_str << '\n';
+    delete root;
+    root = nullptr;
+  }
+
+  vector<TreeNode*> generated_bst5{s.generateTrees(5)};
+  cout << "\ns.generated_bst(5) -> \n";
+  for (auto& root : generated_bst5) {
     const string bst_str{s.preorder_traversal(root)};
     cout << bst_str << '\n';
     delete root;
