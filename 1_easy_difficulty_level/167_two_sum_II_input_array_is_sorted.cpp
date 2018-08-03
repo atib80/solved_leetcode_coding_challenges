@@ -29,10 +29,10 @@ ostream& operator<<(ostream& os, const vector<T>& data) {
     os << "data is empty\n";
     return os;
   }
-  os << "\n  [";
+  os << '[';
   for (size_t i{}; i < data.size() - 1; i++)
     os << data[i] << ',';
-  os << data.back() << "]";
+  os << data.back() << ']';
   return os;
 }
 

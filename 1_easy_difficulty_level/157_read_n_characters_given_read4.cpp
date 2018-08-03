@@ -27,11 +27,9 @@ int read4(char* buffer) {
   static ifstream input_file{"../157_read_n_characters_given_read4.cpp",
                              ios::in};
   static int offset{};
-  if (!input_file) {
-    throw runtime_error{"Could not open specified file!"};
-    return 0;
-  }
-
+  if (!input_file)
+  	throw runtime_error{"Could not open specified file!"};
+  
   input_file.seekg(offset);
 
   if (!input_file.eof() && !input_file.fail()) {
