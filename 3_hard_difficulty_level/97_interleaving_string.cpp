@@ -50,7 +50,8 @@ class Solution {
                 return true;
               visited_s3_chars[next_s1_pos] = 0;
             }
-          }
+          } else
+            return false;
           i++;
         }
 
@@ -65,7 +66,8 @@ class Solution {
                 return true;
               visited_s3_chars[next_s2_pos] = 0;
             }
-          }
+          } else
+            return false;
           j--;
         }
       }
@@ -113,13 +115,6 @@ class Solution {
                                        visited_s3_chars))
       return true;
 
-    visited_s3_chars.clear();
-
-    if (check_if_s1_and_s2_interleaved(s2, s2_len, s1, s1_len, s3, s3_len, 0,
-                                       s1_len - 1, 0, s3_len - 1,
-                                       visited_s3_chars))
-      return true;
-
     return false;
   }
 };
@@ -134,6 +129,11 @@ int main() {
        << "s.isInterleave(\"aabcc\", \"dbbca\", \"aadbbbaccc\") -> "
        << s.isInterleave("aabcc", "dbbca", "aadbbbaccc")
        << '\n'  // expected output: false
+       // << "s.isInterleave(\"cabbcaaacacbac\", \"acabaabacabcca\", "
+       //    "\"cacabaabacaabccbabcaaacacbac\") -> "
+       // << s.isInterleave("cabbcaaacacbac", "acabaabacabcca",
+       //                   "cacabaabacaabccbabcaaacacbac")
+       // << '\n'  // expected output: false
        << noboolalpha;
 
   return 0;
