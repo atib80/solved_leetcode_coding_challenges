@@ -22,44 +22,39 @@ Output: false
 using namespace std;
 
 class Solution {
-  static bool helper(const string& s1,
-                     const string& s2,
-                     const string& s3,
-                     const size_t m,
-                     const size_t n,
-                     const size_t len) {
-    if (m + n != len)
-      return false;
-    vector<vector<bool>> dp(m + 1, vector<bool>(n + 1, false));
-    dp[0][0] = true;
+ public:
+  bool isInterleave(const string& s1, const string& s2, const string& s3) {
+    const size_t s1_len{s1.length()};
+    const size_t s2_len{s2.length()};
+    const size_t s3_len{s3.length()};
 
-    for (size_t i{1}; i <= n; i++) {
+    if (s1_len + s2_len != s3_len)
+      return false;
+    vector<vector<int>> dp(s1_len + 1, vector<int>(s2_len + 1, 0));
+    dp[0][0] = 1;
+
+    for (size_t i{1}; i <= s2_len; i++) {
       if (s2[i - 1] == s3[i - 1])
         dp[0][i] = dp[0][i - 1];
       else
-        dp[0][i] = false;
+        dp[0][i] = 0;
     }
-    for (size_t i{1}; i <= m; i++) {
+    for (size_t i{1}; i <= s1_len; i++) {
       if (s1[i - 1] == s3[i - 1])
         dp[i][0] = dp[i - 1][0];
       else
-        dp[i][0] = false;
+        dp[i][0] = 0;
     }
-    for (size_t i{1}; i <= m; i++) {
-      for (size_t j{1}; j <= n; j++) {
+    for (size_t i{1}; i <= s1_len; i++) {
+      for (size_t j{1}; j <= s2_len; j++) {
         if (s3[i + j - 1] == s1[i - 1])
           dp[i][j] = dp[i - 1][j];
         if (s3[i + j - 1] == s2[j - 1])
-          dp[i][j] = dp[i][j] | dp[i][j - 1];
+          dp[i][j] |= dp[i][j - 1];
       }
     }
 
-    return dp[m][n];
-  }
-
- public:
-  bool isInterleave(const string& s1, const string& s2, const string& s3) {
-    return helper(s1, s2, s3, s1.length(), s2.length(), s3.length());
+    return static_cast<bool>(dp[s1_len][s2_len]);
   }
 };
 
