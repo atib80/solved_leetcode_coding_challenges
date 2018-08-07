@@ -73,11 +73,10 @@ class Solution {
       return result;
     queue<const TreeNode*> qt{{root}};
     queue<const TreeNode*> ql{};
-    vector<int> level_nodes{};
     bool reverse_dir{};
 
     do {
-      level_nodes.clear();
+      vector<int> level_nodes{};
       while (!qt.empty()) {
         const TreeNode* tn{qt.front()};
         qt.pop();
