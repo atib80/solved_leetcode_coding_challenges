@@ -47,19 +47,16 @@ class Solution {
                                         vector<int>& path,
                                         size_t& path_cnt,
                                         const int sum) {
-    if (!root)
-      return;
-
     path.emplace_back(root->val);
-    find_all_paths_for_specified_sum(root->left, path, path_cnt, sum);
-    find_all_paths_for_specified_sum(root->right, path, path_cnt, sum);
+    if (root->left)
+      find_all_paths_for_specified_sum(root->left, path, path_cnt, sum);
+    if (root->right)
+      find_all_paths_for_specified_sum(root->right, path, path_cnt, sum);
 
     int current_sum{};
-    for (int i = path.size() - 1; i >= 0; i--) {
-      current_sum += path[i];
-
-      if (current_sum == sum)
-        path_cnt++;
+    for (auto start{crbegin(path)}; start != crend(path); ++start) {
+      current_sum += *start;
+      if (current_sum == sum) path_cnt++;      
     }
 
     path.pop_back();
