@@ -13,13 +13,13 @@ Example:
 
 root = [10,5,-3,3,2,null,11,3,-2,null,1], sum = 8
 
-      8
-     /  \
-    5   -3
-   / \    \
-  3   2   11
- / \   \
-3  -2   1
+       8
+      / \
+     5  -3
+    / \   \
+   3   2   11
+  / \   \
+ 3  -2   1
 
 Return 3. The paths that sum to 8 are:
 
@@ -30,9 +30,8 @@ Return 3. The paths that sum to 8 are:
 
 #include <iostream>
 #include <queue>
-#include <sstream>
 #include <tuple>
-#include <unordered_set>
+#include <unordered_map>
 
 using namespace std;
 
@@ -45,15 +44,35 @@ struct TreeNode {
 };
 
 class Solution {
+  template <typename T>
+  bool check_if_path_nodes_already_visited(
+      unordered_map<const TreeNode*, vector<vector<const TreeNode*>>>&
+          unique_paths,
+      T&& path_nodes) const {
+    if (unique_paths.find(path_nodes[0]) != end(unique_paths)) {
+      const auto& paths{unique_paths.at(path_nodes[0])};
+      for (const auto& path : paths) {
+        if (path == path_nodes) {
+          return true;
+        }
+      }
+    }
+
+    unique_paths[path_nodes[0]].emplace_back(path_nodes);
+
+    return false;
+  }
+
  public:
-  int pathSum(const TreeNode* root, const int sum) {
+  int pathSum(const TreeNode* root, const int sum) const {
     if (!root)
       return 0;
 
     int cnt{};
     queue<tuple<const TreeNode*, int, vector<const TreeNode*>>> q{
         {make_tuple(root, root->val, vector<const TreeNode*>{root})}};
-    unordered_set<string> unique_paths{};
+    unordered_map<const TreeNode*, vector<vector<const TreeNode*>>>
+        unique_paths{make_pair(root, vector<vector<const TreeNode*>>{{root}})};
 
     while (!q.empty()) {
       const TreeNode* node{get<0>(q.front())};
@@ -61,33 +80,30 @@ class Solution {
       vector<const TreeNode*> path_nodes{move(get<2>(q.front()))};
       q.pop();
 
-      if (sum == current_sum) {
-        ostringstream oss{};
-        for (const TreeNode* n : path_nodes)
-          oss << n << '-';
-        string index{oss.str()};
-        index.pop_back();
-        if (!unique_paths.count(index)) {
-          unique_paths.insert(index);
-          cnt++;
-        }
-      }
+      if (sum == current_sum)
+        cnt++;
 
       if (node->left) {
         path_nodes.emplace_back(node->left);
-        q.emplace(
-            make_tuple(node->left, current_sum + node->left->val, path_nodes));
+        if (!check_if_path_nodes_already_visited(unique_paths, path_nodes))
+          q.emplace(make_tuple(node->left, current_sum + node->left->val,
+                               path_nodes));
         path_nodes.pop_back();
-        q.emplace(make_tuple(node->left, node->left->val,
-                             vector<const TreeNode*>{node->left}));
+        if (!check_if_path_nodes_already_visited(
+                unique_paths, vector<const TreeNode*>{node->left}))
+          q.emplace(make_tuple(node->left, node->left->val,
+                               vector<const TreeNode*>{node->left}));
       }
 
       if (node->right) {
         path_nodes.emplace_back(node->right);
-        q.emplace(make_tuple(node->right, current_sum + node->right->val,
-                             move(path_nodes)));
-        q.emplace(make_tuple(node->right, node->right->val,
-                             vector<const TreeNode*>{node->right}));
+        if (!check_if_path_nodes_already_visited(unique_paths, path_nodes))
+          q.emplace(make_tuple(node->right, current_sum + node->right->val,
+                               move(path_nodes)));
+        if (!check_if_path_nodes_already_visited(
+                unique_paths, vector<const TreeNode*>{node->right}))
+          q.emplace(make_tuple(node->right, node->right->val,
+                               vector<const TreeNode*>{node->right}));
       }
     }
 
@@ -112,8 +128,6 @@ int main() {
   cout << "s.pathSum([10,5,-3,3,2,null,11,3,-2,null,1], 8) -> "
        << s.pathSum(&root1, 8) << '\n';  // expected output: 3
 
-  // [1,null,2,null,3,null,4,null,5], 3
-
   TreeNode root2{1}, rc2{2}, rc2_rc2{3}, rc2_rc2_rc2{4}, rc2_rc2_rc2_rc2{5};
   root2.right = &rc2;
   rc2.right = &rc2_rc2;
@@ -136,7 +150,6 @@ int main() {
   cout << "s.pathSum([1,-2,-3,1,3,-2,null,-1], 3) -> " << s.pathSum(&root3, 3)
        << '\n';  // expected output: 1
 
-  // [0, 1, 1], 1
   TreeNode root4{0}, lc4{1}, rc4{1};
   root4.left = &lc4;
   root4.right = &rc4;
