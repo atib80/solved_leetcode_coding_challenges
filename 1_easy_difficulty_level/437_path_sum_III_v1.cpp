@@ -13,10 +13,10 @@ Example:
 
 root = [10,5,-3,3,2,null,11,3,-2,null,1], sum = 8
 
-       8
-      / \
-     5  -3
-    / \   \
+       10
+      /  \
+     5   -3
+    / \    \
    3   2   11
   / \   \
  3  -2   1
@@ -44,17 +44,14 @@ struct TreeNode {
 };
 
 class Solution {
-  template <typename T>
-  bool check_if_path_nodes_already_visited(
-      unordered_map<const TreeNode*, vector<vector<const TreeNode*>>>&
-          unique_paths,
-      T&& path_nodes) const {
+  template <typename T, typename U>
+  static bool check_if_path_nodes_already_visited(
+      unordered_map<T, vector<vector<T>>>& unique_paths,
+      U&& path_nodes) {
     if (unique_paths.find(path_nodes[0]) != end(unique_paths)) {
-      const auto& paths{unique_paths.at(path_nodes[0])};
-      for (const auto& path : paths) {
-        if (path == path_nodes) {
+      for (const auto& path : unique_paths.at(path_nodes[0])) {
+        if (path == path_nodes)
           return true;
-        }
       }
     }
 
