@@ -90,31 +90,32 @@ class Solution {
  public:
   TreeNode* buildTree(const vector<int>& preorder_elements,
                       const vector<int>& inorder_elements) {
-    if (!inorder_elements.size() || !preorder_elements.size())
+    if (!inorder_elements.size() || !preorder_elements.size() ||
+        inorder_elements.size() != preorder_elements.size())
       return nullptr;
-    TreeNode* root = new TreeNode(numeric_limits<int>::max());
-    size_t i{}, j{};
+    TreeNode* root{new TreeNode(numeric_limits<int>::max())};
     stack<TreeNode*> s{{root}};
     TreeNode *pp{}, *curr{root};
+    size_t i{}, j{};
 
     while (j < inorder_elements.size()) {
       if (s.top()->val == inorder_elements[j]) {
         pp = s.top();
         s.pop();
         j++;
-      } else if (pp != nullptr) {
+      } else if (pp) {
         // add the right child
         curr = new TreeNode(preorder_elements[i]);
         pp->right = curr;
         pp = nullptr;
-        s.push(curr);
+        s.emplace(curr);
         i++;
       } else {
         // add the left child(we would go as "left" as possible because of the
         // property of preoder)
         curr = new TreeNode(preorder_elements[i]);
         s.top()->left = curr;
-        s.push(curr);
+        s.emplace(curr);
         i++;
       }
     }
