@@ -99,11 +99,10 @@ class Solution {
                   const int len) {
     if (len <= 0)
       return nullptr;
-    if (1 == len) {
-      TreeNode* node = new TreeNode(preorder_elements[preorder_index]);
-      return node;
-    }
-    int im = inorder_index;
+    if (1 == len) 
+      return new TreeNode(preorder_elements[preorder_index]);      
+    
+    int im{inorder_index};
     while (inorder_elements[im] != preorder_elements[preorder_index])
       im++;
     const int lLen{im - inorder_index};
