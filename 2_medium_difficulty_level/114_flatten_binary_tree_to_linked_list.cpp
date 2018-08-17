@@ -44,7 +44,7 @@ struct TreeNode {
 };
 
 class Solution {
-  TreeNode* right_start{};
+  TreeNode* right_start;
 
  public:
   Solution() = default;
@@ -94,8 +94,6 @@ int main() {
   cout << '[';
   while (bt_node) {
     cout << bt_node->val << " -> ";
-    if (bt_node->left)
-      cout << "bt_node->left is not nullptr!\n";
     bt_node = bt_node->right;
   }
   cout << "nullptr]";
