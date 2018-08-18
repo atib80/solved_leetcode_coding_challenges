@@ -71,27 +71,6 @@ class Solution {
       return false;
     if (string::npos != s2.find(s1))
       return true;
-    size_t s1_char_freq[26]{}, s2_char_freq[26]{};
-    const size_t min_len{s1_len <= s2_len ? s1_len : s2_len};
-    const size_t max_len{s1_len > s2_len ? s1_len : s2_len};
-
-    for (size_t i{}; i < min_len; i++) {
-      s1_char_freq[s1[i] - 'a']++;
-      s2_char_freq[s2[i] - 'a']++;
-    }
-
-    const string& max_str{s1_len > s2_len ? s1 : s2};
-    size_t* const& max_str_char_freq{s1_len > s2_len ? s1_char_freq
-                                                     : s2_char_freq};
-    if (min_len < max_len) {
-      for (size_t i{min_len}; i < max_len; i++)
-        max_str_char_freq[max_str[i] - 'a']++;
-    }
-
-    for (size_t i{}; i < 26; i++) {
-      if (s1_char_freq[i] > s2_char_freq[i])
-        return false;
-    }
 
     string dst_str{};
     dst_str.reserve(s1_len);
