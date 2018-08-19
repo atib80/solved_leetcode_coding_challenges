@@ -26,80 +26,63 @@ Note:
 #include <iomanip>
 #include <iostream>
 #include <string>
-#include <unordered_set>
-#include <vector>
 
 using namespace std;
 
 class Solution {
-  size_t src_len;
-  size_t needle_len;
-  string dst_str;
-  vector<int> visited_indices;
-  unordered_set<string> already_visited_needles;
-  int end_search;
-
-  bool check_if_src_contains_permutation_of_needle(const string& src,
-                                                   const string& needle) {
-    for (size_t i{}; !end_search && i < needle_len; i++) {
-      if (visited_indices[i])
-        continue;
-
-      visited_indices[i] = 1;
-      dst_str.push_back(needle[i]);
-
-      if (already_visited_needles.count(dst_str)) {
-        dst_str.pop_back();
-        visited_indices[i] = 0;
-        continue;
-       }
-
-      already_visited_needles.insert(dst_str);
-
-      const size_t s2_needle_offset{src.find(dst_str)};
-
-      if (string::npos == s2_needle_offset) {
-        if (1 == dst_str.size()) {
-          end_search = 1;
-          return false;
-        }
-
-        dst_str.pop_back();
-        visited_indices[i] = 0;
-        continue;
-      }
-
-      if (dst_str.length() == needle_len)
-        return true;
-
-      if (s2_needle_offset + needle_len <= src_len) {
-        if (check_if_src_contains_permutation_of_needle(src, needle))
-          return true;
-      }
-
-      dst_str.pop_back();
-      visited_indices[i] = 0;
-    }
-
-    return false;
-  }
-
  public:
   bool checkInclusion(const string& s1, const string& s2) {
-    src_len = s2.length();
-    needle_len = s1.length();
-    if (needle_len > src_len)
+    const size_t s1_len{s1.length()};
+    const size_t s2_len{s2.length()};
+    if (s1_len > s2_len)
       return false;
     if (string::npos != s2.find(s1))
       return true;
+    int s1_char_freq[26]{};
+    int s2_char_freq[26]{};
+    const size_t min_len{s1_len <= s2_len ? s1_len : s2_len};
+    const size_t max_len{s1_len > s2_len ? s1_len : s2_len};
 
-    dst_str.clear();
-    dst_str.reserve(needle_len);
-    visited_indices.clear();
-    visited_indices.resize(needle_len, 0);
-    already_visited_needles.clear();
-    end_search = 0;
-    return check_if_src_contains_permutation_of_needle(s2, s1);
+    for (size_t i{}; i < min_len; i++) {
+      s1_char_freq[s1[i] - 'a']++;
+      s2_char_freq[s2[i] - 'a']++;
+    }
+
+    const string& max_str{s1_len > s2_len ? s1 : s2};
+    int* const& max_str_char_freq{s1_len > s2_len ? s1_char_freq
+                                                  : s2_char_freq};
+
+    for (size_t i{min_len}; i < max_len; i++) {
+      max_str_char_freq[max_str[i] - 'a']++;
+    }
+    for (size_t i{}; i < 26; i++) {
+      if (s1_char_freq[i] > s2_char_freq[i])
+        return false;
+    }
+
+    for (size_t i{}; i < s1_len; i++)
+      s1_char_freq[s2[i] - 'a']--;
+
+    for (size_t i{}; i + s1_len <= s2_len; i++) {
+      if (i)
+        s1_char_freq[s2[i + s1_len - 1] - 'a']--;
+
+      bool found_permuted_substring{true};
+
+      for (size_t k{}; k < 26; k++) {
+        if (s1_char_freq[k]) {
+          found_permuted_substring = false;
+          break;
+        }
+      }
+
+      if (found_permuted_substring)
+        return true;
+
+      s1_char_freq[s2[i] - 'a']++;
+    }
+
+    return false;
   }
 };
 
