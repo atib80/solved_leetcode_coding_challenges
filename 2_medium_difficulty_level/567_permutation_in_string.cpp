@@ -26,6 +26,7 @@ Note:
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 using namespace std;
@@ -33,17 +34,28 @@ using namespace std;
 class Solution {
   bool check_if_src_contains_permutation_of_needle(
       const string& src,
+      const size_t src_len,
       const string& needle,
       const size_t needle_len,
       string& dst_str,
-      vector<int>& visited_indices) {
-    for (size_t i{}; i < needle_len; i++) {
+      vector<int>& visited_indices,
+      unordered_set<string>& already_visited_needles,
+      int& end_search) {
+    for (size_t i{}; !end_search && i < needle_len; i++) {
       if (visited_indices[i])
         continue;
+
       visited_indices[i] = 1;
       dst_str.push_back(needle[i]);
 
-      if (string::npos == src.find(dst_str)) {
+      const size_t s2_needle_offset{src.find(dst_str)};
+
+      if (string::npos == s2_needle_offset) {
+        if (1 == dst_str.size()) {
+          end_search = 1;
+          return false;
+        }
+        already_visited_needles.insert(dst_str);
         dst_str.pop_back();
         visited_indices[i] = 0;
         continue;
@@ -52,9 +64,14 @@ class Solution {
       if (dst_str.length() == needle_len)
         return true;
 
-      if (check_if_src_contains_permutation_of_needle(src, needle, needle_len,
-                                                      dst_str, visited_indices))
-        return true;
+      if (s2_needle_offset + needle_len <= src_len &&
+          !already_visited_needles.count(dst_str)) {
+        already_visited_needles.insert(dst_str);
+        if (check_if_src_contains_permutation_of_needle(
+                src, src_len, needle, needle_len, dst_str, visited_indices,
+                already_visited_needles, end_search))
+          return true;
+      }
 
       dst_str.pop_back();
       visited_indices[i] = 0;
@@ -75,10 +92,13 @@ class Solution {
     string dst_str{};
     dst_str.reserve(s1_len);
     vector<int> visited_indices(s1_len, 0);
+    unordered_set<string> already_visited_needles{};
+    int end_search{};
 
     const bool is_permutation_of_s1_contained_in_s2{
-        check_if_src_contains_permutation_of_needle(s2, s1, s1_len, dst_str,
-                                                    visited_indices)};
+        check_if_src_contains_permutation_of_needle(
+            s2, s2_len, s1, s1_len, dst_str, visited_indices,
+            already_visited_needles, end_search)};
 
     return is_permutation_of_s1_contained_in_s2;
   }
@@ -97,6 +117,10 @@ int main() {
        << s.checkInclusion(
               s1, "dinitrophenylhydrazinetrinitrophenylmethylnitramine")
        << '\n';  // expected output: true
+  s1 = "adc";
+  cout << "s.checkInclusion(\"adc\", "
+          "\"dcda\") -> "
+       << s.checkInclusion(s1, "dcda") << '\n';  // expected output: true
 
   s1 = "kuzntqeuvaszrspkgjvxrupwxwrexztptsowceibeewxbslvosbobmyymikdscshybtmanu"
        "xeqtanrjekbwirmhgvfmzipfiqxcilarfyasoayepgfzmdytlpjymeaztsyubkbmblepwoz"
@@ -118,7 +142,7 @@ int main() {
           "emjigtuanubpstndwzvtiejtoqvetaehvcuujyupncumjnkesmoadzyvkwvjqgqewvvv"
           "pheyyvkewefbjjqzajxnhouodanyruqpzdcjmgnxkmhsgqjhpcyviewmrkfioudzqivm"
           "mguxjxuxdmpsmkwnvbxcomifgxqmcovlkooptjpfxjllwtlkkoaayzduodgsusaogswm"
-          "oqkznynwiukkrrxzkwcknwlazxnlmghybxmyvquzbdqlpfydhnnuvlmyjmixyzso\", "
+          "oqkznynwiukkrrxzkwcknwlazxnlmghybxmyvquzbdqlpfydhnnuvlmyjmixyzso\","
           "\"zthosfejqodcstlqczkndmgwtcakxzxaklkrehkfwnokclametzpnblcwaspdblfoo"
           "psiqrpzlbmlysddlqxcjzezcpknwzljvhmqxqinmptcppipifchxexlytleambzwmqwg"
           "vxlehnecdqsqbrxqfwvcovgdvtmwbnvajvkizixbmuiuyuixjhiohimghdbohetogrhz"
@@ -286,7 +310,44 @@ int main() {
               "vwturqyzcnfkoxumuquwgpersslowdvrnssqcgwmfnssvtobdwcscoikoythwhsx"
               "swsmsimntribaohzrmjculdnnguchmqgyzqeipuumwgizlvjmpvyotgzmtsantsw"
               "darbyaklpiclafgqdaoeiitxlcpwhlqsidkb")
-       << noboolalpha << '\n';  // expected output: true
+       << '\n';  // expected output: true
+
+  s1 = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrs"
+       "tuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl"
+       "mnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde"
+       "fghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwx"
+       "yzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopq"
+       "rstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghij"
+       "klmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabc"
+       "def";
+  cout << "s.checkInclusion("
+          "\"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmn"
+          "opqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcd"
+          "efghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrst"
+          "uvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghij"
+          "klmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz"
+          "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnop"
+          "qrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdef"
+          "ghijklmnopqrstuvwxyzabcdef\", "
+          "\"bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmno"
+          "pqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcde"
+          "fghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu"
+          "vwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk"
+          "lmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyza"
+          "bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopq"
+          "rstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefg"
+          "hijklmnopqrstuvwxyzabcdefg\") -> "
+       << s.checkInclusion(
+              s1,
+              "bcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklm"
+              "nopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxy"
+              "zabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijk"
+              "lmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvw"
+              "xyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghi"
+              "jklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstu"
+              "vwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefg"
+              "hijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefg")
+       << '\n';  // expected output: true
 
   return 0;
 }
