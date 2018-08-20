@@ -1,5 +1,6 @@
 /*
 115. Leetcode coding challenge: Distinct subsequences
+(solution implemented by using dynamic programming method)
 
 Given a string S and a string T, count the number of distinct subsequences of S
 which equals T.
@@ -53,37 +54,23 @@ babgbag
 using namespace std;
 
 class Solution {
-  const char* s_ptr;
-  const char* t_ptr;
-  size_t s_len;
-  size_t t_len;
-  size_t distinct_subsequences;
-
-  void construct_needle_from_characters_of_s(const size_t s_pos,
-                                             const size_t t_pos) {
-    if (t_pos == t_len) {
-      distinct_subsequences++;
-      return;
-    }
-
-    if (s_pos > s_len - (t_len - t_pos))
-      return;
-
-    for (size_t i{s_pos}; i < s_len; i++) {
-      if (s_ptr[i] == t_ptr[t_pos])
-        construct_needle_from_characters_of_s(i + 1, t_pos + 1);
-    }
-  }
-
  public:
   int numDistinct(const string& s, const string& t) {
-    s_ptr = s.c_str();
-    t_ptr = t.c_str();
-    s_len = s.length();
-    t_len = t.length();
-    distinct_subsequences = 0;
-    construct_needle_from_characters_of_s(0, 0);
-    return distinct_subsequences;
+    const size_t s_len{s.length()};
+    const size_t t_len{t.length()};
+    if (!s_len || !t_len)
+      return 0;
+    vector<int> dp(t_len + 1, 0);
+    dp[0] = 1;
+
+    for (size_t i{}; i < s_len; i++) {
+      for (size_t j{t_len}; j >= 1; j--) {
+        if (s[i] == t[j - 1])
+          dp[j] = dp[j] + dp[j - 1];
+      }
+    }
+
+    return dp.back();
   }
 };
 
@@ -94,6 +81,17 @@ int main() {
        << s.numDistinct("rabbbit", "rabbit") << '\n';  // expected output: 3
   cout << "s.numDistinct(\"babgbag\", \"bag\") -> "
        << s.numDistinct("babgbag", "bag") << '\n';  // expected output: 5
+
+  cout << "s.numDistinct("
+          "\"adbdadeecadeadeccaeaabdabdbcdabddddabcaaadbabaaedeeddeaeebcdeabcaa"
+          "aeeaeeabcddcebddebeebedaecccbdcbcedbdaeaedcdebeecdaaedaacadbdccabdda"
+          "ddacdddc\", \"bcddceeeebecbc\") -> "
+       << s.numDistinct(
+              "adbdadeecadeadeccaeaabdabdbcdabddddabcaaadbabaaedeeddeaeebcdeabc"
+              "aaaeeaeeabcddcebddebeebedaecccbdcbcedbdaeaedcdebeecdaaedaacadbdc"
+              "cabddaddacdddc",
+              "bcddceeeebecbc")
+       << '\n';  // expected output: 5
 
   return 0;
 }
