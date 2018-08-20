@@ -39,6 +39,7 @@ using std::pair;
 using std::unordered_map;
 
 class LRUCache {
+	
   list<pair<int, int>> lru_cache_{};
   unordered_map<int, list<pair<int, int>>::iterator> lru_cache_index_{};
   const size_t max_capacity_;
