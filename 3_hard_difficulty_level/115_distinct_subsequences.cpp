@@ -1,6 +1,6 @@
 /*
 115. Leetcode coding challenge: Distinct subsequences
-(solution implemented by using dynamic programming method)
+(solution implemented by using dynamic programming approach)
 
 Given a string S and a string T, count the number of distinct subsequences of S
 which equals T.
@@ -70,7 +70,7 @@ class Solution {
       }
     }
 
-    return dp.back();
+    return dp[t_len];
   }
 };
 
