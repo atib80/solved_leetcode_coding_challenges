@@ -26,6 +26,7 @@ Return the following binary tree:
 #include <memory>
 #include <queue>
 #include <stack>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -40,21 +41,6 @@ ostream& operator<<(ostream& os, const vector<T>& data) {
   for (size_t i{}; i < data.size() - 1; i++)
     os << data[i] << ',';
   os << data.back() << ']';
-  return os;
-}
-
-template <typename T>
-ostream& operator<<(ostream& os, const vector<vector<T>>& data) {
-  if (data.empty()) {
-    os << "data is empty\n";
-    return os;
-  }
-
-  os << "\n[\n";
-  for (const auto& row : data)
-    os << row;
-  os << "\n]\n";
-
   return os;
 }
 
@@ -162,12 +148,13 @@ class Solution {
 int main() {
   Solution s{};
 
-  vector<int> inorder{9, 3, 15, 20, 7};
-  vector<int> postorder{9, 15, 7, 20, 3};
-  unique_ptr<TreeNode> bt_root{s.buildTree(inorder, postorder)};
-  const auto preorder_traversal{s.preorder_traversal(bt_root.get())};
-  cout << "s.buildTree([9,3,15,20,7], [9,15,7,20,3]) -> " << preorder_traversal
-       << '\n';  // expected output: [3,9,20,15,7]
+  vector<int> inorder_bt_elements{9, 3, 15, 20, 7};
+  vector<int> postorder_bt_elements{9, 15, 7, 20, 3};
+  unique_ptr<TreeNode> bt_root{
+      s.buildTree(inorder_bt_elements, postorder_bt_elements)};
+  const auto preorder_traversal_of_bt{s.preorder_traversal(bt_root.get())};
+  cout << "s.buildTree([9,3,15,20,7], [9,15,7,20,3]) -> "
+       << preorder_traversal_of_bt << '\n';  // expected output: [3,9,20,15,7]
 
   return 0;
 }
