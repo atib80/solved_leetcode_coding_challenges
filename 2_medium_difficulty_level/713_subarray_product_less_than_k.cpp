@@ -23,36 +23,23 @@ Note:
 
 using namespace std;
 
-static int sr = []() {
-  ios::sync_with_stdio(false);
-  cin.tie(nullptr);
-  return 0;
-}();
-
 class Solution {
  public:
   int numSubarrayProductLessThanK(const vector<int>& nums, const int k) const {
     const size_t nums_size{nums.size()};
-    size_t subarray_len{1}, number_of_subarrays{};
+    size_t number_of_subarrays{};
+    int product{1};
 
-    while (subarray_len <= nums_size) {
-      for (size_t i{}; i + subarray_len <= nums_size; i++) {
-      	if (nums[i] >= k) continue;
-        int product{nums[i]};
-        bool skip_product{};
-        for (size_t j{i + 1}; j < i + subarray_len; j++) {
-          product *= nums[j];
-          if (product >= k) {
-            skip_product = true;
-            break;
-          }
-        }
+    for (size_t i{}, j{}; j < nums_size; j++) {
+      product *= nums[j];
 
-        if (!skip_product)
-          number_of_subarrays++;
+      while (i < j && product >= k) {
+        product /= nums[i];
+        i++;
       }
 
-      subarray_len++;
+      if (product < k)
+        number_of_subarrays += j - i + 1;
     }
 
     return number_of_subarrays;
@@ -65,6 +52,13 @@ int main() {
   cout << "s.numSubarrayProductLessThanK([10, 5, 2, 6], 100) -> "
        << s.numSubarrayProductLessThanK({10, 5, 2, 6}, 100)
        << '\n';  // expected output: 8
+
+  cout << "s.numSubarrayProductLessThanK([10,9,10,4,3,8,3,3,6,2,10,10,9,3], "
+          "19) -> "
+       << s.numSubarrayProductLessThanK(
+              {10, 9, 10, 4, 3, 8, 3, 3, 6, 2, 10, 10, 9, 3}, 19)
+       << '\n';  // expected output: 18
+
   cout
       << "s.numSubarrayProductLessThanK([18,14,14,25,7,32,20,6,20,13,16,6,22,4,"
          "13,23,32,26,11,12,16,23,30,17,5,6,32,2,22,10,7,12,8,32,13,6,18,1,17,"
@@ -1191,7 +1185,7 @@ int main() {
               26, 2,  11, 12, 4,  30, 24, 8,  7,  14, 9,  23, 13, 11, 28, 7,
               9},
              7641)
-      << '\n';  // expected output: 8
+      << '\n';  // expected output: 26076
 
   return 0;
 }
