@@ -38,22 +38,23 @@ ostream& operator<<(ostream& os, const vector<T>& data) {
 class Solution {
  public:
   vector<int> productExceptSelf(vector<int>& nums) {
+    const size_t nums_size{nums.size()};
     int product{1};
-    bool found_zero{}, multiple_zeroes{};
-    for_each(begin(nums), end(nums),
-             [&product, &found_zero, &multiple_zeroes](const int n) {
-               if (!n) {
-                 if (found_zero)
-                   multiple_zeroes = true;
-                 found_zero = true;
-               } else
-                 product *= n;
-             });
+    bool found_zero{};
+    for (const int n : nums) {
+      if (n)
+        product *= n;
+      else {
+        if (found_zero) {
+          fill(begin(nums), end(nums), 0);
+          return move(nums);
+        }
+        found_zero = true;
+      }
+    }
 
     for (int& n : nums) {
-      if (multiple_zeroes)
-        n = 0;
-      else if (n) {
+      if (n) {
         if (found_zero)
           n = 0;
         else
