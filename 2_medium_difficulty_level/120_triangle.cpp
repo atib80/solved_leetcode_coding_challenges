@@ -8,9 +8,10 @@ For example, given the following triangle
 
 [
      [2],
-    [3,4],
-   [6,5,7],
-  [4,1,8,3]
+    [5,6],
+   [11,10,11,13],
+   [4 , 1, 8, 3]
+   [15,12,11,18,19,14,16]
 ]
 
 The minimum path sum from top to bottom is 11 (i.e., 2 + 3 + 5 + 1 = 11).
@@ -21,6 +22,7 @@ Bonus point if you are able to do this using only O(n) extra space, where n is
 the total number of rows in the triangle.
 */
 
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <vector>
@@ -28,39 +30,44 @@ the total number of rows in the triangle.
 using namespace std;
 
 class Solution {
-  vector<vector<int>> triangle_;
-  size_t number_of_rows_;
-  int min_path_sum_;
-
-  void find_minimum_path_sum(const size_t row_index,
-                             const size_t column_index,
-                             int path_sum = 0) {
-    if (row_index == number_of_rows_) {
-      if (path_sum < min_path_sum_)
-        min_path_sum_ = path_sum;
-      return;
-    }
-
-    path_sum += triangle_[row_index][column_index];
-
-    find_minimum_path_sum(row_index + 1, column_index, path_sum);
-    find_minimum_path_sum(row_index + 1, column_index + 1, path_sum);
-  }
-
  public:
-  int minimumTotal(const vector<vector<int>>& triangle) {
-    triangle_ = move(triangle);
-    number_of_rows_ = triangle_.size();
-    if (!number_of_rows_)
+  int minimumTotal(vector<vector<int>>& triangle) {
+    const size_t number_of_rows{triangle.size()};
+    if (!number_of_rows)
       return 0;
-    if (1 == number_of_rows_) {
-      if (!triangle_[0].empty())
-        return triangle_[0][0];
+    if (1 == number_of_rows) {
+      if (!triangle[0].empty())
+        return triangle[0][0];
       return 0;
     }
-    min_path_sum_ = numeric_limits<int>::max();
-    find_minimum_path_sum(0, 0);
-    return min_path_sum_;
+
+    triangle[1][0] += triangle[0][0];
+    triangle[1][1] += triangle[0][0];
+
+    for (size_t i{2}; i < number_of_rows; i++) {
+      vector<int> next_row{triangle[i - 1].front() + triangle[i].front()};
+      int left_path_sum{};
+      bool left_path_sum_set{};
+
+      for (size_t y{}; y < triangle[i - 1].size(); y++) {
+        if (!left_path_sum_set) {
+          left_path_sum_set = true;
+          left_path_sum = triangle[i - 1][y] + triangle[i][y + 1];
+        } else if (left_path_sum_set) {
+          next_row.emplace_back(
+              min(left_path_sum, triangle[i - 1][y] + triangle[i][y]));
+          if (y < triangle[i - 1].size() - 1)
+            left_path_sum = triangle[i - 1][y] + triangle[i][y + 1];
+          else
+            break;
+        }
+      }
+
+      next_row.emplace_back(triangle[i - 1].back() + triangle[i].back());
+      triangle[i] = move(next_row);
+    }
+
+    return *min_element(begin(triangle.back()), end(triangle.back()));
   }
 };
 
@@ -70,6 +77,34 @@ int main() {
   vector<vector<int>> input{{2}, {3, 4}, {6, 5, 7}, {4, 1, 8, 3}};
   cout << "s.minimumTotal([[2], [3,4], [6,5,7], [4,1,8,3]]) -> "
        << s.minimumTotal(input) << '\n';  // expected output: 11
+
+  input.assign({{2}, {3, 4}, {6, 5, 9}, {4, 4, 8, 0}});
+  cout << "s.minimumTotal([[2],[3,4],[6,5,9],[4,4,8,0]]) -> "
+       << s.minimumTotal(input) << '\n';  // expected output: 14
+
+  input.assign({{-1}, {2, 3}, {1, -1, -3}});
+  cout << "s.minimumTotal([[-1],[2,3],[1,-1,-3]]) -> " << s.minimumTotal(input)
+       << '\n';  // expected output: -1
+
+  input.assign({{-7},
+                {-2, 1},
+                {-5, -5, 9},
+                {-4, -5, 4, 4},
+                {-6, -6, 2, -1, -5},
+                {3, 7, 8, -3, 7, -9},
+                {-9, -1, -9, 6, 9, 0, 7},
+                {-7, 0, -6, -8, 7, 1, -4, 9},
+                {-3, 2, -6, -9, -7, -6, -9, 4, 0},
+                {-8, -6, -3, -9, -2, -6, 7, -5, 0, 7},
+                {-9, -1, -2, 4, -2, 4, 4, -1, 2, -5, 5},
+                {1, 1, -6, 1, -2, -4, 4, -2, 6, -6, 0, 6},
+                {-3, -3, -6, -2, -6, -2, 7, -9, -5, -7, -5, 5, 1}});
+  cout << "s.minimumTotal([[-7],[-2,1],[-5,-5,9],[-4,-5,4,4],[-6,-6,2,-1,-5],["
+          "3,7,8,-3,7,-9],[-9,-1,-9,6,9,0,7],[-7,0,-6,-8,7,1,-4,9],[-3,2,-6,-9,"
+          "-7,-6,-9,4,0],[-8,-6,-3,-9,-2,-6,7,-5,0,7],[-9,-1,-2,4,-2,4,4,-1,2,-"
+          "5,5],[1,1,-6,1,-2,-4,4,-2,6,-6,0,6],[-3,-3,-6,-2,-6,-2,7,-9,-5,-7,-"
+          "5,5,1]]) -> "
+       << s.minimumTotal(input) << '\n';  // expected output: -63
 
   return 0;
 }
