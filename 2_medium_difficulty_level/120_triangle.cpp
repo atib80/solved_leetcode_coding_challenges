@@ -41,30 +41,23 @@ class Solution {
       return 0;
     }
 
-    triangle[1][0] += triangle[0][0];
-    triangle[1][1] += triangle[0][0];
+    triangle[1].front() += triangle[0][0];
+    triangle[1].back() += triangle[0][0];
 
     for (size_t i{2}; i < number_of_rows; i++) {
-      vector<int> next_row{triangle[i - 1].front() + triangle[i].front()};
-      int left_path_sum{};
-      bool left_path_sum_set{};
+      triangle[i].front() += triangle[i - 1].front();
+      int left_path_sum{triangle[i - 1][0] + triangle[i][1]};
 
-      for (size_t y{}; y < triangle[i - 1].size(); y++) {
-        if (!left_path_sum_set) {
-          left_path_sum_set = true;
+      for (size_t y{1}; y < triangle[i - 1].size(); y++) {
+        triangle[i][y] =
+            min(left_path_sum, triangle[i - 1][y] + triangle[i][y]);
+        if (y < triangle[i - 1].size() - 1)
           left_path_sum = triangle[i - 1][y] + triangle[i][y + 1];
-        } else if (left_path_sum_set) {
-          next_row.emplace_back(
-              min(left_path_sum, triangle[i - 1][y] + triangle[i][y]));
-          if (y < triangle[i - 1].size() - 1)
-            left_path_sum = triangle[i - 1][y] + triangle[i][y + 1];
-          else
-            break;
-        }
+        else
+          break;
       }
 
-      next_row.emplace_back(triangle[i - 1].back() + triangle[i].back());
-      triangle[i] = move(next_row);
+      triangle[i].back() += triangle[i - 1].back();
     }
 
     return *min_element(begin(triangle.back()), end(triangle.back()));
