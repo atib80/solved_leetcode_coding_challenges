@@ -24,14 +24,13 @@ the total number of rows in the triangle.
 
 #include <algorithm>
 #include <iostream>
-#include <limits>
 #include <vector>
 
 using namespace std;
 
 class Solution {
  public:
-  int minimumTotal(vector<vector<int>>& triangle) {
+  int minimumTotal(vector<vector<int>>& triangle) const {
     const size_t number_of_rows{triangle.size()};
     if (!number_of_rows)
       return 0;
@@ -41,11 +40,11 @@ class Solution {
       return 0;
     }
 
-    triangle[1].front() += triangle[0][0];
-    triangle[1].back() += triangle[0][0];
+    triangle[1][0] += triangle[0][0];
+    triangle[1][1] += triangle[0][0];
 
     for (size_t i{2}; i < number_of_rows; i++) {
-      triangle[i].front() += triangle[i - 1].front();
+      triangle[i][0] += triangle[i - 1][0];
       int left_path_sum{triangle[i - 1][0] + triangle[i][1]};
 
       for (size_t y{1}; y < triangle[i - 1].size(); y++) {
@@ -92,7 +91,7 @@ int main() {
                 {-9, -1, -2, 4, -2, 4, 4, -1, 2, -5, 5},
                 {1, 1, -6, 1, -2, -4, 4, -2, 6, -6, 0, 6},
                 {-3, -3, -6, -2, -6, -2, 7, -9, -5, -7, -5, 5, 1}});
-  cout << "s.minimumTotal([[-7],[-2,1],[-5,-5,9],[-4,-5,4,4],[-6,-6,2,-1,-5],["
+  cout << "s.minimumTotal([-7],[-2,1],[-5,-5,9],[-4,-5,4,4],[-6,-6,2,-1,-5],["
           "3,7,8,-3,7,-9],[-9,-1,-9,6,9,0,7],[-7,0,-6,-8,7,1,-4,9],[-3,2,-6,-9,"
           "-7,-6,-9,4,0],[-8,-6,-3,-9,-2,-6,7,-5,0,7],[-9,-1,-2,4,-2,4,4,-1,2,-"
           "5,5],[1,1,-6,1,-2,-4,4,-2,6,-6,0,6],[-3,-3,-6,-2,-6,-2,7,-9,-5,-7,-"
