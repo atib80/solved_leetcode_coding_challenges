@@ -44,15 +44,13 @@ class Solution {
   int candy(const vector<int>& ratings) const {
     const size_t ratings_count{ratings.size()};
 
-    if (!ratings_count)
-      return 0;
-    if (1 == ratings_count)
-      return 1;
+    if (ratings_count < 2)
+      return ratings_count;
 
-    size_t i{1}, prev_index{};
     vector<pair<size_t, size_t>> start_end_indices_of_slopes{};
     size_t candies_count{ratings_count};
     vector<int> calc_peak_candy_counts(ratings_count, 0);
+    size_t i{1}, prev_index{};
 
     while (i < ratings_count) {
       if (ratings[i] == ratings[prev_index]) {
@@ -64,20 +62,18 @@ class Solution {
       const bool is_increasing_sequence{ratings[prev_index] < ratings[i]};
       size_t end_index{ratings_count};
 
-      while (true) {
+      for (; i < ratings_count; i++) {
         if ((is_increasing_sequence && !(ratings[i] > ratings[i - 1])) ||
             (!is_increasing_sequence && !(ratings[i] < ratings[i - 1]))) {
           end_index = i;
           start_end_indices_of_slopes.emplace_back(prev_index, i);
           break;
         }
+      }
 
-        i++;
-
-        if (i == ratings_count) {
-          start_end_indices_of_slopes.emplace_back(prev_index, ratings_count);
-          break;
-        }
+      if (i == ratings_count) {
+        start_end_indices_of_slopes.emplace_back(prev_index, ratings_count);
+        break;
       }
 
       i = end_index;
