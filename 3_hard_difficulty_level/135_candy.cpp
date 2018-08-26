@@ -49,38 +49,38 @@ class Solution {
     if (1 == ratings_count)
       return 1;
 
-    size_t start_index{1}, prev_index{};
+    size_t i{1}, prev_index{};
     vector<pair<size_t, size_t>> start_end_indices_of_slopes{};
     size_t candies_count{ratings_count};
-    vector<size_t> peak_candy_counts(ratings_count, string::npos);
+    vector<int> calc_peak_candy_counts(ratings_count, 0);
 
-    while (start_index < ratings_count) {
-      while (ratings[start_index] == ratings[prev_index]) {
-        prev_index = start_index;
-        start_index++;
+    while (i < ratings_count) {
+      if (ratings[i] == ratings[prev_index]) {
+        prev_index = i;
+        i++;
+        continue;
       }
 
-      const bool is_increasing_sequence{ratings[prev_index] <
-                                        ratings[start_index]};
+      const bool is_increasing_sequence{ratings[prev_index] < ratings[i]};
       size_t end_index{ratings_count};
 
-      size_t i{start_index};
-
-      for (; i < ratings_count; i++) {
+      while (true) {
         if ((is_increasing_sequence && !(ratings[i] > ratings[i - 1])) ||
             (!is_increasing_sequence && !(ratings[i] < ratings[i - 1]))) {
           end_index = i;
           start_end_indices_of_slopes.emplace_back(prev_index, i);
           break;
         }
+
+        i++;
+
+        if (i == ratings_count) {
+          start_end_indices_of_slopes.emplace_back(prev_index, ratings_count);
+          break;
+        }
       }
 
-      if (i == ratings_count) {
-        start_end_indices_of_slopes.emplace_back(prev_index, ratings_count);
-        break;
-      }
-
-      start_index = end_index;
+      i = end_index;
       prev_index = end_index - 1;
     }
 
@@ -93,23 +93,16 @@ class Solution {
       size_t width{slope.second - slope.first};
 
       if (ratings[slope.first] < ratings[slope.second - 1]) {
-        if (peak_candy_counts[slope.second - 1] != string::npos) {
+        if (calc_peak_candy_counts[slope.second - 1])
           width--;
-          candies_count += ((width - 1) * width) / 2;
-        } else {
-          size_t add_candies{((width - 1) * width) / 2};
-          candies_count += add_candies;
-          peak_candy_counts[slope.second - 1] = add_candies;
-        }
+        candies_count += ((width - 1) * width) / 2;
+        calc_peak_candy_counts[slope.second - 1] = 1;
+
       } else {
-        if (peak_candy_counts[slope.first] != string::npos) {
+        if (calc_peak_candy_counts[slope.first])
           width--;
-          candies_count += ((width - 1) * width) / 2;
-        } else {
-          size_t add_candies{((width - 1) * width) / 2};
-          candies_count += add_candies;
-          peak_candy_counts[slope.first] = add_candies;
-        }
+        candies_count += ((width - 1) * width) / 2;
+        calc_peak_candy_counts[slope.first] = 1;
       }
     }
 
@@ -126,9 +119,10 @@ int main() {
        << '\n';  // expected output: 4
   cout << "s.candy([1,2,3]) -> " << s.candy({1, 2, 3})
        << '\n';  // expected output: 6
-
-  cout << "s.candy([29, 51, 87, 87, 72, 12]) -> "     // 1 + 2 + 1 + 2 = 12
+  cout << "s.candy([29, 51, 87, 87, 72, 12]) -> "
        << s.candy({29, 51, 87, 87, 72, 12}) << '\n';  // expected output: 12
+  cout << "s.candy([10,10,10,10,10,10]) -> "
+       << s.candy({10, 10, 10, 10, 10, 10}) << '\n';
 
   return 0;
 }
