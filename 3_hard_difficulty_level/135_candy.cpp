@@ -1,19 +1,19 @@
 /*
-135. Leetcode coding challenge: Candy
+135. Leetcode coding challenge: Candy (difficulty level: hard)
 
 There are N children standing in a line. Each child is assigned a rating value.
 
 You are giving candies to these children subjected to the following
 requirements:
 
-    Each child must have at least one candy.
-    Children with a higher rating get more candies than their neighbors.
+    1. Each child must have at least one candy.
+    2. Children with a higher rating get more candies than their neighbors.
 
 What is the minimum candies you must give?
 
 Example 1:
 
-Input: [1,0,2]
+Input: [1,0,3,2]
 Output: 5
 Explanation: You can allocate to the first, second and third child with 2, 1, 2
 candies respectively.
@@ -32,14 +32,17 @@ Input: [1,2,3]
 Output: 6
 */
 
+#include <algorithm>
 #include <iostream>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 using namespace std;
 
 class Solution {
  public:
-  int candy(const vector<int>& ratings) {
+  int candy(const vector<int>& ratings) const {
     const size_t ratings_count{ratings.size()};
 
     if (!ratings_count)
@@ -47,33 +50,76 @@ class Solution {
     if (1 == ratings_count)
       return 1;
 
-    size_t candies{ratings_count}, last_neighbor_candy_count{},
-        last_neighbor_index{};
+    size_t start_index{1}, prev_index{};
+    vector<pair<size_t, size_t>> start_end_indices_of_slopes{};
+    size_t candies_count{ratings_count};
+    unordered_map<size_t, size_t> peak_candy_counts{};
 
-    for (size_t i{}; i < ratings_count; i++) {
-      bool is_peak_rating{};
-      if (!i)
-        is_peak_rating = ratings[i] > ratings[i + 1];
-      else if (ratings_count - 1 == i)
-        is_peak_rating = ratings[i] > ratings[i - 1];
-      else
-        is_peak_rating =
-            ratings[i] > ratings[i - 1] || ratings[i] > ratings[i + 1];
+    while (start_index < ratings_count) {
+      while (ratings[start_index] == ratings[prev_index]) {
+        prev_index = start_index;
+        start_index++;
+      }
 
-      if (is_peak_rating) {
-        if (i - last_neighbor_index == 1) {
-          last_neighbor_candy_count++;
-          candies += last_neighbor_candy_count;
-        } else {
-          candies++;
-          last_neighbor_candy_count = 1;
+      const bool is_increasing_sequence{ratings[prev_index] <
+                                        ratings[start_index]};
+      size_t end_index{ratings_count};
+
+      size_t i{start_index};
+
+      for (; i < ratings_count; i++) {
+        if ((is_increasing_sequence && !(ratings[i] > ratings[i - 1])) ||
+            (!is_increasing_sequence && !(ratings[i] < ratings[i - 1]))) {
+          end_index = i;
+          // cout << '[' << prev_index << ',' << i << ')' << '\n';
+          start_end_indices_of_slopes.emplace_back(prev_index, i);
+          break;
+        }
+      }
+
+      if (i == ratings_count) {
+        // cout << '[' << prev_index << ',' << i << ')' << '\n';
+        start_end_indices_of_slopes.emplace_back(prev_index, ratings_count);
+        break;
+      }
+
+      start_index = end_index;
+      prev_index = end_index - 1;
+    }
+
+    sort(begin(start_end_indices_of_slopes), end(start_end_indices_of_slopes),
+         [](const pair<size_t, size_t>& lp, const pair<size_t, size_t>& rp) {
+           return lp.second - lp.first > rp.second - rp.first;
+         });
+
+    for (const pair<size_t, size_t>& slope : start_end_indices_of_slopes) {
+      size_t add_candies{};
+      if (ratings[slope.first] < ratings[slope.second - 1]) {
+        for (size_t i{slope.first}; i < slope.second - 1; i++) {
+          candies_count += add_candies;
+          add_candies++;
         }
 
-        last_neighbor_index = i;
+        if (peak_candy_counts.find(slope.second - 1) ==
+            end(peak_candy_counts)) {
+          candies_count += add_candies;
+          peak_candy_counts[slope.second - 1] = add_candies;
+        }
+
+      } else {
+        for (size_t i{slope.second - 1}; i > slope.first; i--) {
+          candies_count += add_candies;
+          add_candies++;
+        }
+
+        if (peak_candy_counts.find(slope.first) == end(peak_candy_counts)) {
+          candies_count += add_candies;
+          peak_candy_counts[slope.first] = add_candies;
+        }
       }
     }
 
-    return candies;
+    return candies_count;
   }
 };
 
@@ -85,7 +131,10 @@ int main() {
   cout << "s.candy([1,2,1]) -> " << s.candy({1, 2, 1})
        << '\n';  // expected output: 4
   cout << "s.candy([1,2,3]) -> " << s.candy({1, 2, 3})
-       << '\n';  // expected output: 5
+       << '\n';  // expected output: 6
+
+  cout << "s.candy([29,51,87,100,120,72,12]) -> "     // 1 + 2 + 1 + 2 = 12
+       << s.candy({29, 51, 87, 87, 72, 12}) << '\n';  // expected output: 12
 
   return 0;
 }
