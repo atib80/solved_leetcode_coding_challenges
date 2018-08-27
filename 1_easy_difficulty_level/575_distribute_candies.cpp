@@ -32,30 +32,51 @@ Note:
 
 #include <algorithm>
 #include <iostream>
-#include <unordered_set>
 #include <vector>
 
 using namespace std;
 
 class Solution {
+  static int candy_kinds[200001];
+  static vector<int> indices;
+
  public:
+  Solution() { indices.reserve(10000); }
+
   int distributeCandies(const vector<int>& candies) const {
-    const size_t candies_count{candies.size()};
-    unordered_set<int> candy_kinds{};
-    for (const int c : candies)
-      candy_kinds.insert(c);
-    return min(candy_kinds.size(), candies_count / 2);
+    const size_t half_of_candies{candies.size() / 2};
+    size_t unique_candies{};
+    indices.clear();
+
+    for (const int c : candies) {
+      const int index{100000 + c};
+      if (!candy_kinds[index]) {
+        candy_kinds[index] = 1;
+        indices.emplace_back(index);
+        unique_candies++;
+      }
+    }
+
+    for (const int i : indices)
+      candy_kinds[i] = 0;
+
+    return min(half_of_candies, unique_candies);
   }
 };
+
+int Solution::candy_kinds[200001]{};
+vector<int> Solution::indices{};
 
 int main() {
   Solution s{};
 
+  vector<int> candies{1, 1, 2, 2, 3, 3};
+
   cout << "s.distributeCandies([1,1,2,2,3,3]) -> "
-       << s.distributeCandies({1, 1, 2, 2, 3, 3})
-       << '\n';  // expected output: 3
-  cout << "s.distributeCandies([1,1,2,3]) -> "
-       << s.distributeCandies({1, 1, 2, 3}) << '\n';  // expected output: 2
+       << s.distributeCandies(candies) << '\n';  // expected output: 3
+  candies.assign({1, 1, 2, 3});
+  cout << "s.distributeCandies([1,1,2,3]) -> " << s.distributeCandies(candies)
+       << '\n';  // expected output: 2
 
   return 0;
 }
