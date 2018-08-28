@@ -79,6 +79,7 @@ class Solution {
     const size_t greater_sum_elements_size{A_sum > average ? A_len : B_len};
     const int greater_sum{A_sum > average ? A_sum : B_sum};
     const int lower_sum{A_sum < average ? A_sum : B_sum};
+    const bool is_A_greater_sum{A_sum > average};
     sort(begin(lower_sum_elements), end(lower_sum_elements));
 
     for (int i = greater_sum_elements_size - 1; i >= 0; i--) {
@@ -88,7 +89,7 @@ class Solution {
                         missing_candy_size) &&
           (lower_sum - missing_candy_size + greater_sum_elements[i] ==
            average)) {
-        if (greater_sum == A_sum)
+        if (is_A_greater_sum)
           return {greater_sum_elements[i], missing_candy_size};
         return {missing_candy_size, greater_sum_elements[i]};
       }
