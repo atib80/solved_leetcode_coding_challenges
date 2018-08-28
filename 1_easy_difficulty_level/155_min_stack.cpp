@@ -36,7 +36,7 @@ class MinStack {
   MinOperation min_op_;
 
  public:
-  MinStack() : min_element_index{} { s.reserve(1024); }
+  MinStack() : MinStack(less<T>{}) { }
 
   template <typename MinOperationFunc>
   MinStack(MinOperationFunc&& min_op)
