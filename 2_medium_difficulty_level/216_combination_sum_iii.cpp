@@ -58,28 +58,27 @@ ostream& operator<<(ostream& os, const vector<vector<T>>& data) {
 class Solution {
   void generate_unique_combinations(const int n,
                                     const int k,
-                                    const int current,
+                                    int current_number,
                                     vector<int>& unique_combination,
                                     vector<vector<int>>& combinations,
                                     const int current_sum = 0,
                                     const int iter_count = 0) {
-    int i{current};
-    while (i <= 9 - (k - iter_count) + 1) {
+    while (current_number <= 9 - (k - iter_count) + 1) {
       if (iter_count + 1 == k) {
-        if (current_sum + i == n) {
-          unique_combination[iter_count] = i;
+        if (current_sum + current_number == n) {
+          unique_combination[iter_count] = current_number;
           combinations.emplace_back(unique_combination);
           return;
-        } else if (current_sum + i > n)
+        } else if (current_sum + current_number > n)
           return;
 
-      } else if (current_sum + i < n) {
-        unique_combination[iter_count] = i;
-        generate_unique_combinations(n, k, i + 1, unique_combination,
-                                     combinations, current_sum + i,
-                                     iter_count + 1);
+      } else if (current_sum + current_number < n) {
+        unique_combination[iter_count] = current_number;
+        generate_unique_combinations(
+            n, k, current_number + 1, unique_combination, combinations,
+            current_sum + current_number, iter_count + 1);
       }
-      i++;
+      current_number++;
     }
   }
 
