@@ -33,152 +33,123 @@ Thousand Eight Hundred Ninety One"
 using namespace std;
 
 class Solution {
-  static const unordered_map<int, string> arabic_numerals;
+  static const unordered_map<int64_t, string> arabic_numerals;
 
  public:
-  string convert_number_to_english_words(int number) const {
+  string convert_number_to_english_words(int64_t number) const {
+    static const int64_t div_factors[]{1000000000000000000LL,
+                                       1000000000000000LL,
+                                       1000000000000LL,
+                                       1000000000LL,
+                                       1000000LL,
+                                       1000LL,
+                                       1LL,
+                                       0LL};
     if (!number)
       return "Zero";
     string output{};
     output.reserve(256);
 
-    int factor{number / 1000000000};
+    if (number < 0)
+      output += arabic_numerals.at(-1LL);
 
-    if (factor) {
-      output += arabic_numerals.at(factor);
-      output += " Billion";
-      number %= 1000000000;
-    }
+    for (const int64_t div_factor : div_factors) {
+      if (!div_factor || !number)
+        break;
 
-    if (number >= 1000000) {
-      const int thousands{number % 1000000};
-      number /= 1000000;
-      factor = number / 100;
-      if (factor) {
-        if (!output.empty())
-          output.push_back(' ');
-        output += arabic_numerals.at(factor);
-        output += " Hundred";
-        number %= 100;
-      }
+      int64_t factor{number / div_factor};
 
-      if (arabic_numerals.find(number) != end(arabic_numerals)) {
-        if (!output.empty())
-          output.push_back(' ');
-        output += arabic_numerals.at(number);
-        output += " Million";
-      } else {
-        factor = number - (number % 10);
+      if (number >= div_factor) {
+        const int64_t remainder{number % div_factor};
+        number /= div_factor;
+        factor = number / 100LL;
         if (factor) {
           if (!output.empty())
             output.push_back(' ');
           output += arabic_numerals.at(factor);
+          output.push_back(' ');
+          output += arabic_numerals.at(100LL);
+          number %= 100LL;
         }
 
-        number %= 10;
-
-        if (number) {
+        if (arabic_numerals.find(number) != end(arabic_numerals)) {
           if (!output.empty())
             output.push_back(' ');
           output += arabic_numerals.at(number);
-        }
-
-        if (!output.empty())
-          output += " Million";
-      }
-
-      number = thousands;
-    }
-
-    if (number >= 1000) {
-      int remainder{number % 1000};
-      number /= 1000;
-      factor = number / 100;
-      if (factor) {
-        if (!output.empty())
-          output.push_back(' ');
-        output += arabic_numerals.at(factor);
-        output += " Hundred";
-        number %= 100;
-      }
-
-      if (arabic_numerals.find(number) != end(arabic_numerals)) {
-        if (!output.empty())
-          output.push_back(' ');
-        output += arabic_numerals.at(number);
-        output += " Thousand";
-      } else {
-        factor = number - (number % 10);
-        if (factor) {
-          if (!output.empty())
+          if (1LL != div_factor) {
             output.push_back(' ');
-          output += arabic_numerals.at(factor);
-        }
+            output += arabic_numerals.at(div_factor);
+          }
+        } else {
+          factor = number - (number % 10LL);
+          if (factor) {
+            if (!output.empty())
+              output.push_back(' ');
+            output += arabic_numerals.at(factor);
+          }
 
-        number %= 10;
+          number %= 10LL;
 
-        if (number) {
-          if (!output.empty())
+          if (number) {
+            if (!output.empty())
+              output.push_back(' ');
+            output += arabic_numerals.at(number);
+          }
+
+          if (!output.empty() && 1LL != div_factor) {
             output.push_back(' ');
-          output += arabic_numerals.at(number);
+            output += arabic_numerals.at(div_factor);
+          }
         }
 
-        if (!output.empty())
-          output += " Thousand";
+        number = remainder;
       }
-
-      number = remainder;
-    }
-
-    if (!number)
-      return output;
-    factor = number / 100;
-    if (factor) {
-      if (!output.empty())
-        output.push_back(' ');
-      output += arabic_numerals.at(factor);
-      output += " Hundred";
-      number %= 100;
-    }
-
-    if (arabic_numerals.find(number) != end(arabic_numerals)) {
-      if (!output.empty())
-        output.push_back(' ');
-      output += arabic_numerals.at(number);
-      return output;
-    }
-
-    factor = number - (number % 10);
-    if (factor) {
-      if (!output.empty())
-        output.push_back(' ');
-      output += arabic_numerals.at(factor);
-    }
-
-    number %= 10;
-
-    if (number) {
-      if (!output.empty())
-        output.push_back(' ');
-      output += arabic_numerals.at(number);
     }
 
     return output;
   }
 
-  string numberToWords(int number) const {
+  string numberToWords(int64_t number) const {
     return convert_number_to_english_words(number);
   }
 };
 
-const unordered_map<int, string> Solution::arabic_numerals{
-    {1, "One"},        {2, "Two"},       {3, "Three"},     {4, "Four"},
-    {5, "Five"},       {6, "Six"},       {7, "Seven"},     {8, "Eight"},
-    {9, "Nine"},       {10, "Ten"},      {11, "Eleven"},   {12, "Twelve"},
-    {13, "Thirteen"},  {14, "Fourteen"}, {15, "Fifteen"},  {16, "Sixteen"},
-    {17, "Seventeen"}, {18, "Eighteen"}, {19, "Nineteen"}, {20, "Twenty"},
-    {30, "Thirty"},    {40, "Forty"},    {50, "Fifty"},    {60, "Sixty"},
-    {70, "Seventy"},   {80, "Eighty"},   {90, "Ninety"}};
+const unordered_map<int64_t, string> Solution::arabic_numerals{
+    {-1LL, "Minus"},
+    {1LL, "One"},
+    {2LL, "Two"},
+    {3LL, "Three"},
+    {4LL, "Four"},
+    {5LL, "Five"},
+    {6LL, "Six"},
+    {7LL, "Seven"},
+    {8LL, "Eight"},
+    {9LL, "Nine"},
+    {10LL, "Ten"},
+    {11LL, "Eleven"},
+    {12LL, "Twelve"},
+    {13LL, "Thirteen"},
+    {14LL, "Fourteen"},
+    {15LL, "Fifteen"},
+    {16LL, "Sixteen"},
+    {17LL, "Seventeen"},
+    {18LL, "Eighteen"},
+    {19LL, "Nineteen"},
+    {20LL, "Twenty"},
+    {30LL, "Thirty"},
+    {40LL, "Forty"},
+    {50LL, "Fifty"},
+    {60LL, "Sixty"},
+    {70LL, "Seventy"},
+    {80LL, "Eighty"},
+    {90LL, "Ninety"},
+    {100LL, "Hundred"},
+    {1000LL, "Thousand"},
+    {1000000LL, "Million"},
+    {1000000000LL, "Billion"},
+    {1000000000000LL, "Trillion"},
+    {1000000000000000LL, "Quadrillion"},
+    {1000000000000000000LL, "Quintillion"}};
 
 int main() {
   Solution s{};
@@ -194,8 +165,12 @@ int main() {
        << '\n';  // expected output: "One Billion Two Hundred Thirty Four
                  // Million Five Hundred Sixty Seven Thousand Eight Hundred
                  // Ninety One"
-  cout << "s.numberToWords(12345) -> " << s.numberToWords(12345)
-       << '\n';  // expected output: "Twelve Thousand Three Hundred Forty Five"
+  cout << "s.numberToWords(12345678912345678) -> "
+       << s.numberToWords(12345678912345678LL)
+       << '\n';  // expected output: "Twelve Zillion Three Hundred Forty Five
+                 // Trillion Six Hundred Seventy Eight Billion Nine Hundred
+                 // Twelve Million Three Hundred Forty Five Thousand Six Hundred
+                 // Seventy Eight"
   cout << "s.numberToWords(0) -> " << s.numberToWords(0)
        << '\n';  // expected output: "Zero"
 
