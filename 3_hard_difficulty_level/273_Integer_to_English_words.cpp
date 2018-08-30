@@ -35,154 +35,139 @@ using namespace std;
 class Solution {
   static const unordered_map<int, string> arabic_numerals;
 
-  static int get_number_of_billions(int num, string& output) {
-    const int factor{num / 1000000000};
+ public:
+  string convert_number_to_english_words(int number) const {
+    if (!number)
+      return "Zero";
+    string output{};
+    output.reserve(256);
+
+    int factor{number / 1000000000};
 
     if (factor) {
       output += arabic_numerals.at(factor);
       output += " Billion";
-      num %= 1000000000;
+      number %= 1000000000;
     }
 
-    return num;
-  }
+    if (number >= 1000000) {
+      const int thousands{number % 1000000};
+      number /= 1000000;
+      factor = number / 100;
+      if (factor) {
+        if (!output.empty())
+          output.push_back(' ');
+        output += arabic_numerals.at(factor);
+        output += " Hundred";
+        number %= 100;
+      }
 
-  static int get_number_of_millions(int num, string& output) {
-    if (num < 1000000)
-      return num;
-    const int ret_num{num % 1000000};
-    num %= 1000000000;
-    num /= 1000000;
-    int factor{num / 100};
+      if (arabic_numerals.find(number) != end(arabic_numerals)) {
+        if (!output.empty())
+          output.push_back(' ');
+        output += arabic_numerals.at(number);
+        output += " Million";
+      } else {
+        factor = number - (number % 10);
+        if (factor) {
+          if (!output.empty())
+            output.push_back(' ');
+          output += arabic_numerals.at(factor);
+        }
+
+        number %= 10;
+
+        if (number) {
+          if (!output.empty())
+            output.push_back(' ');
+          output += arabic_numerals.at(number);
+        }
+
+        if (!output.empty())
+          output += " Million";
+      }
+
+      number = thousands;
+    }
+
+    if (number >= 1000) {
+      int remainder{number % 1000};
+      number /= 1000;
+      factor = number / 100;
+      if (factor) {
+        if (!output.empty())
+          output.push_back(' ');
+        output += arabic_numerals.at(factor);
+        output += " Hundred";
+        number %= 100;
+      }
+
+      if (arabic_numerals.find(number) != end(arabic_numerals)) {
+        if (!output.empty())
+          output.push_back(' ');
+        output += arabic_numerals.at(number);
+        output += " Thousand";
+      } else {
+        factor = number - (number % 10);
+        if (factor) {
+          if (!output.empty())
+            output.push_back(' ');
+          output += arabic_numerals.at(factor);
+        }
+
+        number %= 10;
+
+        if (number) {
+          if (!output.empty())
+            output.push_back(' ');
+          output += arabic_numerals.at(number);
+        }
+
+        if (!output.empty())
+          output += " Thousand";
+      }
+
+      number = remainder;
+    }
+
+    if (!number)
+      return output;
+    factor = number / 100;
     if (factor) {
       if (!output.empty())
         output.push_back(' ');
       output += arabic_numerals.at(factor);
       output += " Hundred";
-      num %= 100;
+      number %= 100;
     }
 
-    if (arabic_numerals.find(num) != end(arabic_numerals)) {
+    if (arabic_numerals.find(number) != end(arabic_numerals)) {
       if (!output.empty())
         output.push_back(' ');
-      output += arabic_numerals.at(num);
-      output += " Million";
-      return ret_num;
-    } else {
-      factor = num - (num % 10);
-      if (factor) {
-        if (!output.empty())
-          output.push_back(' ');
-        output += arabic_numerals.at(factor);
-      }
+      output += arabic_numerals.at(number);
+      return output;
     }
 
-    num %= 10;
-
-    if (num) {
-      if (!output.empty())
-        output.push_back(' ');
-      output += arabic_numerals.at(num);
-    }
-
-    if (!output.empty())
-      output += " Million";
-
-    return ret_num;
-  }
-
-  static int get_number_of_thousands(int num, string& output) {
-    if (num < 1000)
-      return num;
-    const int ret_num{num % 1000};
-    num %= 1000000;
-    num /= 1000;
-    int factor{num / 100};
+    factor = number - (number % 10);
     if (factor) {
       if (!output.empty())
         output.push_back(' ');
       output += arabic_numerals.at(factor);
-      output += " Hundred";
-      num %= 100;
     }
 
-    if (arabic_numerals.find(num) != end(arabic_numerals)) {
+    number %= 10;
+
+    if (number) {
       if (!output.empty())
         output.push_back(' ');
-      output += arabic_numerals.at(num);
-      output += " Thousand";
-      return ret_num;
-    } else {
-      factor = num - (num % 10);
-      if (factor) {
-        if (!output.empty())
-          output.push_back(' ');
-        output += arabic_numerals.at(factor);
-      }
+      output += arabic_numerals.at(number);
     }
-
-    num %= 10;
-
-    if (num) {
-      if (!output.empty())
-        output.push_back(' ');
-      output += arabic_numerals.at(num);
-    }
-
-    if (!output.empty())
-      output += " Thousand";
-
-    return ret_num;
-  }
-
-  static void get_number_less_than_thousand(int num, string& output) {
-    if (!num)
-      return;
-    num %= 1000;
-    int factor{num / 100};
-    if (factor) {
-      if (!output.empty())
-        output.push_back(' ');
-      output += arabic_numerals.at(factor);
-      output += " Hundred";
-      num %= 100;
-    }
-
-    if (arabic_numerals.find(num) != end(arabic_numerals)) {
-      if (!output.empty())
-        output.push_back(' ');
-      output += arabic_numerals.at(num);
-      return;
-    } else {
-      factor = num - (num % 10);
-      if (factor) {
-        if (!output.empty())
-          output.push_back(' ');
-        output += arabic_numerals.at(factor);
-      }
-    }
-
-    num %= 10;
-
-    if (num) {
-      if (!output.empty())
-        output.push_back(' ');
-      output += arabic_numerals.at(num);
-    }
-  }
-
- public:
-  string numberToWords(int num) const {
-    if (!num)
-      return "Zero";
-    string output{};
-    output.reserve(256);
-    num = get_number_of_billions(num, output);
-    num = get_number_of_millions(num, output);
-    num = get_number_of_thousands(num, output);
-    get_number_less_than_thousand(num, output);
 
     return output;
+  }
+
+  string numberToWords(int number) const {
+    return convert_number_to_english_words(number);
   }
 };
 
