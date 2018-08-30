@@ -46,12 +46,12 @@ class Solution {
                                        1LL,
                                        0LL};
     if (!number)
-      return "Zero";
+      return arabic_numerals.at(0);
     string output{};
     output.reserve(256);
 
     if (number < 0)
-      output += arabic_numerals.at(-1LL);
+      output += arabic_numerals.at(-1);
 
     for (const int64_t div_factor : div_factors) {
       if (!div_factor || !number)
@@ -62,33 +62,33 @@ class Solution {
       if (number >= div_factor) {
         const int64_t remainder{number % div_factor};
         number /= div_factor;
-        factor = number / 100LL;
+        factor = number / 100;
         if (factor) {
           if (!output.empty())
             output.push_back(' ');
           output += arabic_numerals.at(factor);
           output.push_back(' ');
-          output += arabic_numerals.at(100LL);
-          number %= 100LL;
+          output += arabic_numerals.at(100);
+          number %= 100;
         }
 
         if (arabic_numerals.find(number) != end(arabic_numerals)) {
           if (!output.empty())
             output.push_back(' ');
           output += arabic_numerals.at(number);
-          if (1LL != div_factor) {
+          if (1 != div_factor) {
             output.push_back(' ');
             output += arabic_numerals.at(div_factor);
           }
         } else {
-          factor = number - (number % 10LL);
+          factor = number - (number % 10);
           if (factor) {
             if (!output.empty())
               output.push_back(' ');
             output += arabic_numerals.at(factor);
           }
 
-          number %= 10LL;
+          number %= 10;
 
           if (number) {
             if (!output.empty())
@@ -96,7 +96,7 @@ class Solution {
             output += arabic_numerals.at(number);
           }
 
-          if (!output.empty() && 1LL != div_factor) {
+          if (!output.empty() && 1 != div_factor) {
             output.push_back(' ');
             output += arabic_numerals.at(div_factor);
           }
@@ -116,6 +116,7 @@ class Solution {
 
 const unordered_map<int64_t, string> Solution::arabic_numerals{
     {-1LL, "Minus"},
+    {0LL, "Zero"},
     {1LL, "One"},
     {2LL, "Two"},
     {3LL, "Three"},
@@ -165,12 +166,13 @@ int main() {
        << '\n';  // expected output: "One Billion Two Hundred Thirty Four
                  // Million Five Hundred Sixty Seven Thousand Eight Hundred
                  // Ninety One"
-  cout << "s.numberToWords(12345678912345678) -> "
-       << s.numberToWords(12345678912345678LL)
-       << '\n';  // expected output: "Twelve Zillion Three Hundred Forty Five
-                 // Trillion Six Hundred Seventy Eight Billion Nine Hundred
-                 // Twelve Million Three Hundred Forty Five Thousand Six Hundred
-                 // Seventy Eight"
+  cout
+      << "s.numberToWords(12345678912345678) -> "
+      << s.numberToWords(12345678912345678LL)
+      << '\n';  // expected output: "Twelve Quadrillion Three Hundred Forty Five
+                // Trillion Six Hundred Seventy Eight Billion Nine Hundred
+                // Twelve Million Three Hundred Forty Five Thousand Six Hundred
+                // Seventy Eight"
   cout << "s.numberToWords(0) -> " << s.numberToWords(0)
        << '\n';  // expected output: "Zero"
 
