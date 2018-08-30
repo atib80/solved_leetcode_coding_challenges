@@ -41,7 +41,7 @@ class Solution {
     if (factor) {
       output += arabic_numerals.at(factor);
       output += " Billion";
-      num -= factor * 1000000000;
+      num %= 1000000000;
     }
 
     return num;
@@ -59,16 +59,25 @@ class Solution {
         output.push_back(' ');
       output += arabic_numerals.at(factor);
       output += " Hundred";
-      num -= factor * 100;
+      num %= 100;
     }
 
-    factor = (num / 10) * 10;
-    if (factor) {
+    if (arabic_numerals.find(num) != end(arabic_numerals)) {
       if (!output.empty())
         output.push_back(' ');
-      output += arabic_numerals.at(factor);
-      num -= factor;
+      output += arabic_numerals.at(num);
+      output += " Million";
+      return ret_num;
+    } else {
+      factor = num - (num % 10);
+      if (factor) {
+        if (!output.empty())
+          output.push_back(' ');
+        output += arabic_numerals.at(factor);
+      }
     }
+
+    num %= 10;
 
     if (num) {
       if (!output.empty())
@@ -94,16 +103,25 @@ class Solution {
         output.push_back(' ');
       output += arabic_numerals.at(factor);
       output += " Hundred";
-      num -= factor * 100;
+      num %= 100;
     }
 
-    factor = (num / 10) * 10;
-    if (factor) {
+    if (arabic_numerals.find(num) != end(arabic_numerals)) {
       if (!output.empty())
         output.push_back(' ');
-      output += arabic_numerals.at(factor);
-      num -= factor;
+      output += arabic_numerals.at(num);
+      output += " Thousand";
+      return ret_num;
+    } else {
+      factor = num - (num % 10);
+      if (factor) {
+        if (!output.empty())
+          output.push_back(' ');
+        output += arabic_numerals.at(factor);
+      }
     }
+
+    num %= 10;
 
     if (num) {
       if (!output.empty())
@@ -120,23 +138,31 @@ class Solution {
   static void get_number_less_than_thousand(int num, string& output) {
     if (!num)
       return;
-
+    num %= 1000;
     int factor{num / 100};
     if (factor) {
       if (!output.empty())
         output.push_back(' ');
       output += arabic_numerals.at(factor);
       output += " Hundred";
-      num -= factor * 100;
+      num %= 100;
     }
 
-    factor = (num / 10) * 10;
-    if (factor) {
+    if (arabic_numerals.find(num) != end(arabic_numerals)) {
       if (!output.empty())
         output.push_back(' ');
-      output += arabic_numerals.at(factor);
-      num -= factor;
+      output += arabic_numerals.at(num);
+      return;
+    } else {
+      factor = num - (num % 10);
+      if (factor) {
+        if (!output.empty())
+          output.push_back(' ');
+        output += arabic_numerals.at(factor);
+      }
     }
+
+    num %= 10;
 
     if (num) {
       if (!output.empty())
@@ -147,9 +173,9 @@ class Solution {
 
  public:
   string numberToWords(int num) const {
-    string output{};
     if (!num)
-      return output;
+      return "Zero";
+    string output{};
     output.reserve(256);
     num = get_number_of_billions(num, output);
     num = get_number_of_millions(num, output);
@@ -161,37 +187,13 @@ class Solution {
 };
 
 const unordered_map<int, string> Solution::arabic_numerals{
-    {1, "One"},
-    {2, "Two"},
-    {3, "Three"},
-    {4, "Four"},
-    {5, "Five"},
-    {6, "Six"},
-    {7, "Seven"},
-    {8, "Eight"},
-    {9, "Nine"},
-    {10, "Ten"},
-    {11, "Eleven"},
-    {12, "Twelve"},
-    {13, "Thirteen"},
-    {14, "Fourteen"},
-    {15, "Fifteen"},
-    {16, "Sixteen"},
-    {17, "Seventeen"},
-    {18, "Eighteen"},
-    {19, "Nineteen"},
-    {20, "Twenty"},
-    {30, "Thirty"},
-    {40, "Fourty"},
-    {50, "Fifty"},
-    {60, "Sixty"},
-    {70, "Seventy"},
-    {80, "Eighty"},
-    {90, "Ninety"},
-    {100, "Hundred"},
-    {1000, "Thousand"},
-    {1000000, "Million"},
-    {1000000000, "Billion"}};
+    {1, "One"},        {2, "Two"},       {3, "Three"},     {4, "Four"},
+    {5, "Five"},       {6, "Six"},       {7, "Seven"},     {8, "Eight"},
+    {9, "Nine"},       {10, "Ten"},      {11, "Eleven"},   {12, "Twelve"},
+    {13, "Thirteen"},  {14, "Fourteen"}, {15, "Fifteen"},  {16, "Sixteen"},
+    {17, "Seventeen"}, {18, "Eighteen"}, {19, "Nineteen"}, {20, "Twenty"},
+    {30, "Thirty"},    {40, "Forty"},    {50, "Fifty"},    {60, "Sixty"},
+    {70, "Seventy"},   {80, "Eighty"},   {90, "Ninety"}};
 
 int main() {
   Solution s{};
@@ -207,6 +209,10 @@ int main() {
        << '\n';  // expected output: "One Billion Two Hundred Thirty Four
                  // Million Five Hundred Sixty Seven Thousand Eight Hundred
                  // Ninety One"
+  cout << "s.numberToWords(12345) -> " << s.numberToWords(12345)
+       << '\n';  // expected output: "Twelve Thousand Three Hundred Forty Five"
+  cout << "s.numberToWords(0) -> " << s.numberToWords(0)
+       << '\n';  // expected output: "Zero"
 
   return 0;
 }
