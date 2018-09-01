@@ -30,10 +30,8 @@ What limitation we need to add to the question to allow negative numbers?
 
 #include <algorithm>
 #include <iostream>
-#include <queue>
 #include <set>
 #include <string>
-#include <tuple>
 #include <unordered_set>
 #include <vector>
 
@@ -143,7 +141,6 @@ class Solution {
     // print_range(cbegin(numbers), cend(numbers));
 
     current_seq.reserve(numbers_size);
-
     already_visited_sequences.clear();
 
     unordered_set<int> already_visited_first_elements{};
