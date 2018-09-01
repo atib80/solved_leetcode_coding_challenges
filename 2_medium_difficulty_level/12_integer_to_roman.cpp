@@ -74,9 +74,11 @@ class Solution {
   Solution() { keys.reserve(16); }
 
   string intToRoman(const int num) {
+    
     int src_num{num};
     keys.clear();
     src_num = abs(src_num);
+    
     int i{};
     while (src_num) {
       const int factor{src_num % div_factors[i++]};

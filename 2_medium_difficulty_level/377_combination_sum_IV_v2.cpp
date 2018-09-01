@@ -6,7 +6,7 @@ number of possible combinations that add up to a positive integer target.
 
 Example:
 
-nums = [1,2,3]
+nums = [1,1,1,1,2,2,3]
 target = 4
 
 The possible combination ways are:
@@ -51,10 +51,18 @@ void print_range(T&& first, T&& last) {
 }
 
 class Solution {
-  static void generate_hash_index(const vector<int>& seq, string& hash_index) {
+  vector<int> numbers;
+  vector<int> current_seq;
+  unordered_set<size_t> visited_indices;
+  unordered_set<string> already_visited_sequences;
+  string hash_index;
+  size_t numbers_size;
+  int target_sum;
+
+  void generate_hash_index() {
     hash_index.clear();
 
-    for (int n : seq) {
+    for (int n : current_seq) {
       while (n) {
         hash_index.push_back(n % 10 + '0');
         n /= 10;
@@ -66,7 +74,52 @@ class Solution {
     hash_index.pop_back();
   }
 
+  void find_count_of_unique_combinations_for_given_target_sum(
+      int& unique_combinations_count,
+      const int current_sum) {
+    size_t j{};
+    while (j < numbers_size) {
+      if (visited_indices.find(j) != end(visited_indices)) {
+        j++;
+        continue;
+      }
+      visited_indices.insert(j);
+      if (target_sum == current_sum + numbers[j]) {
+        unique_combinations_count++;
+        visited_indices.erase(j);
+        return;
+
+      } else if (current_sum + numbers[j] > target_sum) {
+        visited_indices.erase(j);
+        return;
+      }
+
+      else {
+        current_seq.emplace_back(numbers[j]);
+        generate_hash_index();
+        if (already_visited_sequences.find(hash_index) !=
+            end(already_visited_sequences)) {
+          current_seq.pop_back();
+          visited_indices.erase(j);
+          j = static_cast<size_t>(
+              upper_bound(cbegin(numbers) + j + 1, cend(numbers), numbers[j]) -
+              cbegin(numbers));
+          continue;
+        }
+        already_visited_sequences.insert(hash_index);
+        if (j < numbers_size)
+          find_count_of_unique_combinations_for_given_target_sum(
+              unique_combinations_count, current_sum + numbers[j]);
+        current_seq.pop_back();
+      }
+
+      visited_indices.erase(j);
+      j++;
+    }
+  }
+
  public:
+  Solution() { hash_index.reserve(1024); }
   int combinationSum4(vector<int>& nums, const int target) {
     multiset<int> sorted_nums{cbegin(nums), cend(nums)};
     auto start = cbegin(sorted_nums);
@@ -83,21 +136,22 @@ class Solution {
       start = sorted_nums.upper_bound(current_num);
     }
 
-    const size_t nums_size{sorted_nums.size()};
-    nums.reserve(nums_size);
-    nums.assign(cbegin(sorted_nums), cend(sorted_nums));
-    // print_range(cbegin(nums), cend(nums));
+    numbers_size = sorted_nums.size();
+    numbers.reserve(numbers_size);
+    numbers.assign(cbegin(sorted_nums), cend(sorted_nums));
+    target_sum = target;
+    // print_range(cbegin(numbers), cend(numbers));
 
-    unordered_set<string> already_visited_sequences{};
+    current_seq.reserve(numbers_size);
+
+    already_visited_sequences.clear();
+
     unordered_set<int> already_visited_first_elements{};
-    string hash_index{};
-    hash_index.reserve(1024);
-
     int unique_combinations_count{};
 
     size_t i{};
 
-    while (i < nums_size) {
+    while (i < numbers_size) {
       if (already_visited_first_elements.find(nums[i]) !=
           end(already_visited_first_elements)) {
         i = static_cast<size_t>(
@@ -113,48 +167,14 @@ class Solution {
             cbegin(nums));
         continue;
       }
-      queue<tuple<int, vector<int>, unordered_set<size_t>>> q{{make_tuple(
-          nums[i], vector<int>{nums[i]}, unordered_set<size_t>{i})}};
 
-      while (!q.empty()) {
-        const int current_sum{get<0>(q.front())};
-        vector<int> current_seq{move(get<1>(q.front()))};
-        unordered_set<size_t> visited_indices{move(get<2>(q.front()))};
-        q.pop();
+      visited_indices.clear();
+      visited_indices.insert(i);
+      current_seq.clear();
+      current_seq.emplace_back(nums[i]);
 
-        for (size_t j{}; j < nums_size; j++) {
-          if (visited_indices.find(j) != end(visited_indices))
-            continue;
-          visited_indices.insert(j);
-          if (target == current_sum + nums[j]) {
-            current_seq.emplace_back(nums[j]);
-            generate_hash_index(current_seq, hash_index);
-            if (already_visited_sequences.find(hash_index) ==
-                end(already_visited_sequences)) {
-              already_visited_sequences.insert(hash_index);
-              unique_combinations_count++;
-            }
-            break;
-
-          } else if (current_sum + nums[j] > target)
-            break;
-
-          else {
-            current_seq.emplace_back(nums[j]);
-            if (j < nums_size - 1) {
-              q.emplace(make_tuple(current_sum + nums[j], current_seq,
-                                   visited_indices));
-              current_seq.pop_back();
-            } else if (nums_size - 1 == j) {
-              q.emplace(make_tuple(current_sum + nums[j], move(current_seq),
-                                   move(visited_indices)));
-              break;
-            }
-          }
-
-          visited_indices.erase(j);
-        }
-      }
+      find_count_of_unique_combinations_for_given_target_sum(
+          unique_combinations_count, nums[i]);
       i++;
     }
 
