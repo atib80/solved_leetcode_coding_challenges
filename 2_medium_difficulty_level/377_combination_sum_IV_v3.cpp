@@ -51,7 +51,8 @@ void print_range(T&& first, T&& last) {
 }
 
 class Solution {
-  void generate_hash_index(const multiset<int>& seq, string& hash_index) {
+  static void generate_hash_index(const multiset<int>& seq,
+                                  string& hash_index) {
     hash_index.clear();
 
     for (int n : seq) {
@@ -117,7 +118,7 @@ class Solution {
     bool carry{};
 
     for (int i = k - 1, offset{}; i >= 0; i--, offset++) {
-      if (!i && indices[i] > nums_size - k)
+      if (!i && indices[i] >= nums_size - k)
         return false;
 
       if (nums_size - 1 - offset == indices[i]) {
@@ -142,24 +143,21 @@ class Solution {
     auto start = cbegin(sorted_nums);
     bool number_last_digit_3_target_last_digit_0{0 == target % 10};
 
+    uint64_t unique_combinations_count{};
+
     while (start != end(sorted_nums)) {
       const int current_num{*start};
-      if (current_num > target) {
+      if (current_num >= target) {
+        if (target == current_num)
+          unique_combinations_count++;
         sorted_nums.erase(current_num);
-        start = sorted_nums.upper_bound(current_num);
-        continue;
-      }
-
-      if (number_last_digit_3_target_last_digit_0 && 3 != current_num % 10)
-        number_last_digit_3_target_last_digit_0 = false;
-      const int cnt{target / current_num};
-      const int number_freq = sorted_nums.count(current_num);
-      if (cnt > number_freq) {
-        if (current_num == target) {
-          sorted_nums.erase(current_num);
-          sorted_nums.insert(current_num);
-        } else {
-          for (int i{}; i < cnt - number_freq; ++i)
+      } else {
+        if (number_last_digit_3_target_last_digit_0 && 3 != current_num % 10)
+          number_last_digit_3_target_last_digit_0 = false;
+        const int cnt{target / current_num};
+        const int number_freq = sorted_nums.count(current_num);
+        if (cnt > number_freq) {
+          for (int i{}; i < cnt - number_freq; i++)
             sorted_nums.insert(current_num);
         }
       }
@@ -173,98 +171,99 @@ class Solution {
     const size_t nums_size{sorted_nums.size()};
     nums.reserve(nums_size);
     nums.assign(cbegin(sorted_nums), cend(sorted_nums));
+    // print_range(begin(nums), end(nums));
 
-    unordered_set<string> already_visited_sequences{};
-    unordered_set<int> already_visited_first_elements{};
     string hash_index{};
     hash_index.reserve(1024);
-
-    uint64_t unique_combinations_count{};
-
-    if (sorted_nums.find(target) != end(sorted_nums))
-      unique_combinations_count++;
+    unordered_set<string> already_visited_sequences{};
 
     for (size_t k{2}; k <= nums_size; k++) {
-      size_t rep{nums_size};
-      for (size_t i{nums_size - 1}; i > max(1u, nums_size - k); i--)
-        rep *= i;
-      size_t divisor{k};
-      for (size_t i{k - 1}; i > 1; i--)
-        divisor *= i;
-      rep /= divisor;
+      int current_sum{};
+      multiset<int> current_seq{};
+
+      for (size_t i{nums_size - k}; i < nums_size; i++) {
+        current_sum += nums[i];
+        current_seq.insert(nums[i]);
+      }
+      if (current_sum < target)
+        continue;
+      if (target == current_sum) {
+        unique_combinations_count +=
+            calculate_count_of_unique_permutations_for_given_sequence(
+                current_seq);
+        continue;
+      }
 
       vector<size_t> indices(k);
       for (size_t i{}; i < k; i++)
         indices[i] = i;
+      already_visited_sequences.clear();
+      bool is_process_next_k{};
 
-      multiset<int> current_seq{};
-      int current_sum{};
-
-      for (size_t c{}; !is_process_next_k && c < rep; c++) {
-        if (already_visited_first_elements.find(nums[indices[0]]) !=
-            end(already_visited_first_elements)) {
-          indices[0] =
-              static_cast<size_t>(upper_bound(cbegin(nums) + indices[0] + 1,
-                                              cend(nums), nums[indices[0]]) -
-                                  cbegin(nums));
-          for (size_t i{1}; i < k; i++) {
-            if (indices[i - 1] + 1 > nums_size - k + i) {
-              is_process_next_k = true;
-              break;
-            }
-
-            indices[i] = indices[i - 1] + 1;
-          }
-
-          already_visited_first_elements.insert(nums[indices[0]]);
-        }
-
-        if (nums[indices[0]] >= target)
-          break;
-
+      while (!is_process_next_k) {
         current_seq.clear();
+        current_sum = 0;
 
         for (size_t i{}; i < k; i++) {
           current_seq.insert(nums[indices[i]]);
           current_sum += nums[indices[i]];
         }
 
-        if (target == current_sum) {
-          generate_hash_index(current_seq, hash_index);
-          if (already_visited_sequences.find(hash_index) ==
-              end(already_visited_sequences)) {
-            unique_combinations_count +=
-                calculate_count_of_unique_permutations_for_given_sequence(
-                    current_seq);
-            already_visited_sequences.insert(hash_index);
-          }
-        } else {
-          generate_hash_index(current_seq, hash_index);
-          while (already_visited_sequences.find(hash_index) !=
-                 end(already_visited_sequences)) {
-            indices.back() = static_cast<size_t>(
-                upper_bound(cbegin(nums) + indices.back() + 1, cend(nums),
-                            nums[indices.back()]) -
-                cbegin(nums));
-            if (indices.back() == nums_size) {
-              indices.back() = nums_size - 1;
-              if (!shift_indices(indices, k, nums_size))
-                break;
-              current_seq.clear();
-              for (const size_t i : indices)
-                current_seq.insert(nums[i]);
-            } else {
-              current_seq.erase(--end(current_seq));
-              current_seq.insert(nums[indices.back()])
+        generate_hash_index(current_seq, hash_index);
+        while (already_visited_sequences.find(hash_index) !=
+               end(already_visited_sequences)) {
+          indices[k - 1] = static_cast<size_t>(
+              upper_bound(cbegin(nums) + indices[k - 1] + 1, cend(nums),
+                          nums[indices[k - 1]]) -
+              cbegin(nums));
+          if (nums_size == indices[k - 1]) {
+            indices[k - 1] = nums_size - 1;
+            if (!shift_indices(indices, k, nums_size)) {
+              is_process_next_k = true;
+              break;
+            }
+            current_seq.clear();
+            current_sum = 0;
+            for (const size_t i : indices) {
+              current_seq.insert(nums[i]);
+              current_sum += nums[i];
             }
 
-            generate_hash_index(current_seq, hash_index);
+            if (current_sum > target) {
+              is_process_next_k = true;
+              break;
+            }
+          } else {
+            const auto last_item{--end(current_seq)};
+            current_sum -= *last_item;
+            current_seq.erase(last_item);
+            current_seq.insert(nums[indices[k - 1]]);
+            current_sum += nums[indices[k - 1]];
           }
 
-          already_visited_sequences.insert(hash_index);
+          generate_hash_index(current_seq, hash_index);
         }
 
-        shift_indices(indices, k, nums_size);
+        if (is_process_next_k)
+          break;
+
+        already_visited_sequences.insert(hash_index);
+
+        if (target == current_sum) {
+          unique_combinations_count +=
+              calculate_count_of_unique_permutations_for_given_sequence(
+                  current_seq);
+          if (k - 1 == indices[k - 1])
+            break;
+          indices[k - 1] = nums_size - 1;
+        } else if (current_sum > target) {
+          if (k - 1 == indices[k - 1])
+            break;
+          indices[k - 1] = nums_size - 1;
+        }
+
+        if (!shift_indices(indices, k, nums_size))
+          break;
       }
     }
 
@@ -277,47 +276,6 @@ int main() {
   vector<int> input{1, 2, 3};
   cout << "s.combinationSum4([1, 2, 3], 4) -> " << s.combinationSum4(input, 4)
        << '\n';
-  input.assign({1, 50});
-  cout << "s.combinationSum4([1, 50], 200) -> " << s.combinationSum4(input, 200)
-       << '\n';  // expected output: 28730
-  input.assign({3, 33, 333});
-  cout << "s.combinationSum4([3, 33, 333], 20000) -> "
-       << s.combinationSum4(input, 20000) << '\n';  // expected output: 0
-
-  input.assign({13,  17,  19,  23,  29,  31,  37,  41,  43,  47,  53,  59,
-                61,  67,  71,  73,  79,  83,  89,  97,  101, 103, 107, 109,
-                113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179,
-                181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241,
-                251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313,
-                317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389,
-                397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461,
-                463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547,
-                557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 615});
-  cout << "s.combinationSum4([13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,"
-          "79,83,89,97,101,103,107,109,113,127,131,137,139,149,151,157,163,167,"
-          "173,179,181,191,193,197,199,211,223,227,229,233,239,241,251,257,263,"
-          "269,271,277,281,283,293,307,311,313,317,331,337,347,349,353,359,367,"
-          "373,379,383,389,397,401,409,419,421,431,433,439,443,449,457,461,463,"
-          "467,479,487,491,499,503,509,521,523,541,547,557,563,569,571,577,587,"
-          "593,599,601,607,615], 220) -> "
-       << s.combinationSum4(input, 220) << '\n';  // expected output: 45452242
-
-  input.assign({10,  20,  30,  40,  50,  60,  70,  80,  90,  100, 110, 120, 130,
-                140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 260,
-                270, 280, 290, 300, 310, 320, 330, 340, 350, 360, 370, 380, 390,
-                400, 410, 420, 430, 440, 450, 460, 470, 480, 490, 500, 510, 520,
-                530, 540, 550, 560, 570, 580, 590, 600, 610, 620, 630, 640, 650,
-                660, 670, 680, 690, 700, 710, 720, 730, 740, 750, 760, 770, 780,
-                790, 800, 810, 820, 830, 840, 850, 860, 870, 880, 890, 900, 910,
-                920, 930, 940, 950, 960, 970, 980, 990, 111});
-  cout << "s.combinationSum4([10,20,30,40,50,60,70,80,90,100,110,120,130,140,"
-          "150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,"
-          "320,330,340,350,360,370,380,390,400,410,420,430,440,450,460,470,480,"
-          "490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,"
-          "660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,"
-          "830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990,"
-          "111], 999) -> "
-       << s.combinationSum4(input, 999) << '\n';  // expected output: ?
 
   return 0;
 }

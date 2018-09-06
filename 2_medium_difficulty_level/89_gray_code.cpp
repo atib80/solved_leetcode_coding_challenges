@@ -70,20 +70,22 @@ class Solution {
       mask <<= 1;
     }
 
+    // valid_masks = [0001, 0010, 0100, 1000]
+
     do {
       gray_codes.clear();
       gray_codes.emplace_back(0);
       vector<int> unique_grey_codes(count, 0);
-      unique_grey_codes[0] = 1;
+      unique_grey_codes[0] = 1; // bit-flag
       int value{};
       int prev_used_mask{};
 
       while (true) {
         bool found{};
-        for (const int m : valid_masks) {
+        for (const int m : valid_masks) { // 1
           if (m == prev_used_mask)
             continue;
-          const int gc{value ^ m};
+          const int gc{value ^ m}; // gc = 0001
           if (unique_grey_codes[gc])
             continue;
           value = gc;
