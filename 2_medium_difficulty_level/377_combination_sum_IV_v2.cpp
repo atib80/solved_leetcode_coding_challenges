@@ -60,11 +60,17 @@ class Solution {
     hash_index.clear();
 
     for (int n : seq) {
+      const bool is_negative_number{n < 0};
+      if (is_negative_number)
+        n = abs(n);
+
       while (n) {
         hash_index.push_back(n % 10 + '0');
         n /= 10;
       }
 
+      if (is_negative_number)
+        hash_index.push_back('-');
       hash_index.push_back(',');
     }
 
@@ -162,6 +168,10 @@ class Solution {
     multiset<int> sorted_nums{cbegin(nums), cend(nums)};
     auto start = cbegin(sorted_nums);
     bool number_last_digit_3_target_last_digit_0{0 == target % 10};
+    bool all_numbers_even{true};
+    bool all_even_numbers_divisible_by_ten{true};
+    vector<int> odd_numbers{};
+    odd_numbers.reserve(nums.size());
 
     uint64_t unique_combinations_count{};
 
@@ -174,6 +184,11 @@ class Solution {
       } else {
         if (number_last_digit_3_target_last_digit_0 && 3 != current_num % 10)
           number_last_digit_3_target_last_digit_0 = false;
+        if (current_num % 2 == 1) {
+          all_numbers_even = false;
+          odd_numbers.emplace_back(current_num);
+        } else if (current_num % 10 != 0)
+          all_even_numbers_divisible_by_ten = false;
         const int cnt{target / current_num};
         const int number_freq = sorted_nums.count(current_num);
         if (cnt > number_freq) {
@@ -188,9 +203,27 @@ class Solution {
     if (number_last_digit_3_target_last_digit_0)
       return 0;
 
+    if (all_numbers_even && 1 == target % 2)
+      return unique_combinations_count;
+
+    if (all_even_numbers_divisible_by_ten && 1 == odd_numbers.size() &&
+        1 == target % 2) {
+      int diff{target - odd_numbers[0]};
+      while (diff > 0) {
+        if (0 == diff % 10)
+          break;
+        diff -= odd_numbers[0];
+      }
+
+      if (0 == target % odd_numbers[0])
+        return 1;
+      return 0;
+    }
+
     numbers_size = sorted_nums.size();
     numbers.reserve(numbers_size);
     numbers.assign(cbegin(sorted_nums), cend(sorted_nums));
+    print_range(begin(numbers), end(numbers));
 
     target_sum = target;
 
@@ -233,25 +266,22 @@ int main() {
           "593,599,601,607,615], 220) -> "
        << s.combinationSum4(input, 220) << '\n';  // expected output: 45452242
 
-  // input.assign({10,  20,  30,  40,  50,  60,  70,  80,  90,  100, 110, 120,
-  // 130,
-  //               140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250,
-  //               260, 270, 280, 290, 300, 310, 320, 330, 340, 350, 360, 370,
-  //               380, 390, 400, 410, 420, 430, 440, 450, 460, 470, 480, 490,
-  //               500, 510, 520, 530, 540, 550, 560, 570, 580, 590, 600, 610,
-  //               620, 630, 640, 650, 660, 670, 680, 690, 700, 710, 720, 730,
-  //               740, 750, 760, 770, 780, 790, 800, 810, 820, 830, 840, 850,
-  //               860, 870, 880, 890, 900, 910, 920, 930, 940, 950, 960, 970,
-  //               980, 990, 111});
-  // cout <<
-  // "s.combinationSum4([10,20,30,40,50,60,70,80,90,100,110,120,130,140,"
-  //         "150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,"
-  //         "320,330,340,350,360,370,380,390,400,410,420,430,440,450,460,470,480,"
-  //         "490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,"
-  //         "660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,"
-  //         "830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990,"
-  //         "111], 999) -> "
-  //      << s.combinationSum4(input, 999) << '\n';  // expected output: ?
+  input.assign({10,  20,  30,  40,  50,  60,  70,  80,  90,  100, 110, 120, 130,
+                140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 260,
+                270, 280, 290, 300, 310, 320, 330, 340, 350, 360, 370, 380, 390,
+                400, 410, 420, 430, 440, 450, 460, 470, 480, 490, 500, 510, 520,
+                530, 540, 550, 560, 570, 580, 590, 600, 610, 620, 630, 640, 650,
+                660, 670, 680, 690, 700, 710, 720, 730, 740, 750, 760, 770, 780,
+                790, 800, 810, 820, 830, 840, 850, 860, 870, 880, 890, 900, 910,
+                920, 930, 940, 950, 960, 970, 980, 990, 111});
+  cout << "s.combinationSum4([10,20,30,40,50,60,70,80,90,100,110,120,130,140,"
+          "150,160,170,180,190,200,210,220,230,240,250,260,270,280,290,300,310,"
+          "320,330,340,350,360,370,380,390,400,410,420,430,440,450,460,470,480,"
+          "490,500,510,520,530,540,550,560,570,580,590,600,610,620,630,640,650,"
+          "660,670,680,690,700,710,720,730,740,750,760,770,780,790,800,810,820,"
+          "830,840,850,860,870,880,890,900,910,920,930,940,950,960,970,980,990,"
+          "111], 999) -> "
+       << s.combinationSum4(input, 999) << '\n';  // expected output: ?
 
   return 0;
 }
