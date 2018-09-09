@@ -61,28 +61,24 @@ class Solution {
     queue<TreeLinkNode*> ql{};
 
     while (!qt.empty()) {
-      TreeLinkNode *src{}, *dst{};
-      do {
-        if (!src) {
-          src = qt.front();
-          qt.pop();
-          if (src->left)
-            ql.emplace(src->left);
-          if (src->right)
-            ql.emplace(src->right);
-          src->next = dst;
-        } else {
-          dst = qt.front();
-          qt.pop();
-          if (dst->left)
-            ql.emplace(dst->left);
-          if (dst->right)
-            ql.emplace(dst->right);
-          src->next = dst;
-          src = dst;
-          dst = nullptr;
-        }
-      } while (!qt.empty());
+      TreeLinkNode* src{qt.front()};
+      qt.pop();
+      if (src->left)
+        ql.emplace(src->left);
+      if (src->right)
+        ql.emplace(src->right);
+      src->next = nullptr;
+
+      while (!qt.empty()) {
+        TreeLinkNode* dst{qt.front()};
+        qt.pop();
+        if (dst->left)
+          ql.emplace(dst->left);
+        if (dst->right)
+          ql.emplace(dst->right);
+        src->next = dst;
+        src = dst;
+      }
       qt.swap(ql);
     }
   }
