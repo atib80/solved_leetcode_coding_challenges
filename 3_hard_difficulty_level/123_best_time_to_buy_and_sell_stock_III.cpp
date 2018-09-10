@@ -77,10 +77,8 @@ class Solution {
             calculate_max_profit_for_specified_interval_of_days(
                 begin(prices) + j, end(prices));
 
-        if (transaction_profit > max_profit) {
+        if (transaction_profit > max_profit)
           max_profit = transaction_profit;
-          break;
-        }
       }
     }
 
@@ -97,6 +95,8 @@ int main() {
        << '\n';  // expected output: 4
   cout << "s.maxProfit([7,6,4,3,1]) -> " << s.maxProfit({7, 6, 4, 3, 1})
        << '\n';  // expected output: 0
+  cout << "s.maxProfit([2,1,4,5,2,9,7]) -> "
+       << s.maxProfit({2, 1, 4, 5, 2, 9, 7}) << '\n';  // expected output: 11
 
   return 0;
 }
