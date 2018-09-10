@@ -1,4 +1,6 @@
 /*
+116. Populating Next Right Pointers in Each Node (difficulty level: medium)
+
 Given a binary tree
 
 struct TreeLinkNode {
@@ -103,7 +105,7 @@ class Solution {
           ql.emplace(tn->right);
       }
       qt.swap(ql);
-      output.emplace_back(move(level_nodes));
+      output.push_back(move(level_nodes));
     } while (!qt.empty());
 
     return output;
