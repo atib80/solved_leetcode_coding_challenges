@@ -38,7 +38,6 @@ Output: 42
 #include <algorithm>
 #include <climits>
 #include <iostream>
-#include <unordered_set>
 
 using namespace std;
 
@@ -47,12 +46,16 @@ struct TreeNode {
   int val;
   TreeNode* left;
   TreeNode* right;
-  explicit TreeNode(const int x) : val{x}, left{}, right{} {}
+  TreeNode(const int x) : val{x}, left{}, right{} {}
+  ~TreeNode() {
+    if (left)
+      delete left;
+    if (right)
+      delete right;
+  }
 };
 
 class Solution {
-  unordered_set<TreeNode*> visited_nodes;
-
   void find_sub_tree_maximum_path_sum(TreeNode* node,
                                       int& maximum_path_sum,
                                       int& maximum_sub_tree_path_sum,
@@ -64,11 +67,8 @@ class Solution {
     if (current_sub_tree_path_sum > maximum_sub_tree_path_sum)
       maximum_sub_tree_path_sum = current_sub_tree_path_sum;
 
-    if (node->left && node->right && !visited_nodes.count(node->left)) {
+    if (node->left && node->right) {
       int left_tree_path_sum{INT_MIN}, right_tree_path_sum{INT_MIN};
-
-      visited_nodes.emplace(node->left);
-      visited_nodes.emplace(node->right);
 
       find_sub_tree_maximum_path_sum(node->left, maximum_path_sum,
                                      left_tree_path_sum, node->left->val,
@@ -96,26 +96,32 @@ class Solution {
           max(left_tree_path_sum + node->val, right_tree_path_sum + node->val);
       if (prev_max_path_sum + node->val > maximum_sub_tree_path_sum)
         maximum_sub_tree_path_sum = prev_max_path_sum + node->val;
-    }
 
-    if (node->left && !visited_nodes.count(node->left)) {
-      find_sub_tree_maximum_path_sum(
-          node->left, maximum_path_sum, maximum_sub_tree_path_sum,
-          current_sub_tree_path_sum + node->left->val,
-          current_path_sum + node->left->val);
-      find_sub_tree_maximum_path_sum(
-          node->left, maximum_path_sum, maximum_sub_tree_path_sum,
-          current_sub_tree_path_sum + node->left->val, node->left->val);
-    }
+      // delete node->left;
+      node->left = nullptr;
+      // delete node->right;
+      node->right = nullptr;
 
-    if (node->right && !visited_nodes.count(node->right)) {
-      find_sub_tree_maximum_path_sum(
-          node->right, maximum_path_sum, maximum_sub_tree_path_sum,
-          current_sub_tree_path_sum + node->right->val,
-          current_path_sum + node->right->val);
-      find_sub_tree_maximum_path_sum(
-          node->right, maximum_path_sum, maximum_sub_tree_path_sum,
-          current_sub_tree_path_sum + node->right->val, node->right->val);
+    } else {
+      if (node->left) {
+        find_sub_tree_maximum_path_sum(
+            node->left, maximum_path_sum, maximum_sub_tree_path_sum,
+            current_sub_tree_path_sum + node->left->val,
+            current_path_sum + node->left->val);
+        find_sub_tree_maximum_path_sum(
+            node->left, maximum_path_sum, maximum_sub_tree_path_sum,
+            current_sub_tree_path_sum + node->left->val, node->left->val);
+      }
+
+      if (node->right) {
+        find_sub_tree_maximum_path_sum(
+            node->right, maximum_path_sum, maximum_sub_tree_path_sum,
+            current_sub_tree_path_sum + node->right->val,
+            current_path_sum + node->right->val);
+        find_sub_tree_maximum_path_sum(
+            node->right, maximum_path_sum, maximum_sub_tree_path_sum,
+            current_sub_tree_path_sum + node->right->val, node->right->val);
+      }
     }
   }
 
@@ -126,8 +132,6 @@ class Solution {
 
     int maximum_path_sum{INT_MIN}, maximum_left_tree_path_sum{INT_MIN},
         maximum_right_tree_path_sum{INT_MIN};
-
-    visited_nodes.clear();
 
     if (root->left)
       find_sub_tree_maximum_path_sum(root->left, maximum_path_sum,
