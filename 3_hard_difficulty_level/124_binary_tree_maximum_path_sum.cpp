@@ -21,17 +21,24 @@ Example 2:
 
 Input: [-10,9,20,null,null,15,7]
 
-   -10
-   / \
-  9  20
-    /  \
-   15   7
+    -10
+   /   \
+  9    20
+      /  \
+     15   7
 
 Output: 42
+
+          5
+        4   8
+      11  13  4
+     7  2       1
 */
 
+#include <algorithm>
 #include <climits>
 #include <iostream>
+#include <unordered_set>
 
 using namespace std;
 
@@ -44,110 +51,108 @@ struct TreeNode {
 };
 
 class Solution {
-  static void find_left_tree_maximum_path_sum(
-      const TreeNode* node,
-      int& maximum_left_tree_path_sum,
-      const int current_left_tree_path_sum) {
-    if (!node)
-      return;
+  unordered_set<TreeNode*> visited_nodes;
 
-    if (current_left_tree_path_sum > maximum_left_tree_path_sum)
-      maximum_left_tree_path_sum = current_left_tree_path_sum;
-
-    if (node->left) {
-      find_left_tree_maximum_path_sum(
-          node->left, maximum_left_tree_path_sum,
-          current_left_tree_path_sum + node->left->val);
-      find_left_tree_maximum_path_sum(node->left, maximum_left_tree_path_sum,
-                                      node->left->val);
-    }
-
-    if (node->right) {
-      find_left_tree_maximum_path_sum(
-          node->right, maximum_left_tree_path_sum,
-          current_left_tree_path_sum + node->right->val);
-      find_left_tree_maximum_path_sum(node->right, maximum_left_tree_path_sum,
-                                      node->right->val);
-    }
-  }
-
-  static void find_right_tree_maximum_path_sum(
-      const TreeNode* node,
-      int& maximum_right_tree_path_sum,
-      const int current_right_tree_path_sum) {
-    if (!node)
-      return;
-
-    if (current_right_tree_path_sum > maximum_right_tree_path_sum)
-      maximum_right_tree_path_sum = current_right_tree_path_sum;
-
-    if (node->left) {
-      find_right_tree_maximum_path_sum(
-          node->left, maximum_right_tree_path_sum,
-          current_right_tree_path_sum + node->left->val);
-      find_right_tree_maximum_path_sum(node->left, maximum_right_tree_path_sum,
-                                       node->left->val);
-    }
-
-    if (node->right) {
-      find_right_tree_maximum_path_sum(
-          node->right, maximum_right_tree_path_sum,
-          current_right_tree_path_sum + node->right->val);
-      find_right_tree_maximum_path_sum(node->right, maximum_right_tree_path_sum,
-                                       node->right->val);
-    }
-  }
-
-  static void find_maximum_path_sum(const TreeNode* node,
-                                    int& maximum_path_sum,
-                                    const int current_path_sum) {
+  void find_sub_tree_maximum_path_sum(TreeNode* node,
+                                      int& maximum_path_sum,
+                                      int& maximum_sub_tree_path_sum,
+                                      const int current_sub_tree_path_sum,
+                                      const int current_path_sum) {
     if (current_path_sum > maximum_path_sum)
       maximum_path_sum = current_path_sum;
 
-    if (node->left && node->right) {
-      int maximum_left_tree_path_sum{}, maximum_right_tree_path_sum{};
+    if (current_sub_tree_path_sum > maximum_sub_tree_path_sum)
+      maximum_sub_tree_path_sum = current_sub_tree_path_sum;
 
-      find_left_tree_maximum_path_sum(node->left, maximum_left_tree_path_sum,
-                                      node->left->val);
-      find_right_tree_maximum_path_sum(node->right, maximum_right_tree_path_sum,
-                                       node->right->val);
+    if (node->left && node->right && !visited_nodes.count(node->left)) {
+      int left_tree_path_sum{INT_MIN}, right_tree_path_sum{INT_MIN};
+
+      visited_nodes.emplace(node->left);
+      visited_nodes.emplace(node->right);
+
+      find_sub_tree_maximum_path_sum(node->left, maximum_path_sum,
+                                     left_tree_path_sum, node->left->val,
+                                     node->left->val);
+      find_sub_tree_maximum_path_sum(node->right, maximum_path_sum,
+                                     right_tree_path_sum, node->right->val,
+                                     node->right->val);
       if (node->val > maximum_path_sum)
         maximum_path_sum = node->val;
-      if (maximum_left_tree_path_sum > maximum_path_sum)
-        maximum_path_sum = maximum_left_tree_path_sum;
-      if (maximum_right_tree_path_sum > maximum_path_sum)
-        maximum_path_sum = maximum_right_tree_path_sum;
-      if (maximum_left_tree_path_sum + node->val > maximum_path_sum)
-        maximum_path_sum = maximum_left_tree_path_sum + node->val;
-      if (maximum_right_tree_path_sum + node->val > maximum_path_sum)
-        maximum_path_sum = maximum_right_tree_path_sum + node->val;
-      if (maximum_left_tree_path_sum + node->val + maximum_right_tree_path_sum >
+      if (left_tree_path_sum > maximum_path_sum)
+        maximum_path_sum = left_tree_path_sum;
+      if (right_tree_path_sum > maximum_path_sum)
+        maximum_path_sum = right_tree_path_sum;
+      if (left_tree_path_sum + node->val > maximum_path_sum)
+        maximum_path_sum = left_tree_path_sum + node->val;
+      if (right_tree_path_sum + node->val > maximum_path_sum)
+        maximum_path_sum = right_tree_path_sum + node->val;
+      if (left_tree_path_sum + node->val + right_tree_path_sum >
           maximum_path_sum)
-        maximum_path_sum = maximum_left_tree_path_sum + node->val +
-                           maximum_right_tree_path_sum;
+        maximum_path_sum = left_tree_path_sum + node->val + right_tree_path_sum;
+
+      const int prev_max_path_sum{current_sub_tree_path_sum - node->val};
+
+      node->val =
+          max(left_tree_path_sum + node->val, right_tree_path_sum + node->val);
+      if (prev_max_path_sum + node->val > maximum_sub_tree_path_sum)
+        maximum_sub_tree_path_sum = prev_max_path_sum + node->val;
     }
 
-    if (node->left) {
-      find_maximum_path_sum(node->left, maximum_path_sum,
-                            current_path_sum + node->left->val);
-      find_maximum_path_sum(node->left, maximum_path_sum, node->left->val);
+    if (node->left && !visited_nodes.count(node->left)) {
+      find_sub_tree_maximum_path_sum(
+          node->left, maximum_path_sum, maximum_sub_tree_path_sum,
+          current_sub_tree_path_sum + node->left->val,
+          current_path_sum + node->left->val);
+      find_sub_tree_maximum_path_sum(
+          node->left, maximum_path_sum, maximum_sub_tree_path_sum,
+          current_sub_tree_path_sum + node->left->val, node->left->val);
     }
 
-    if (node->right) {
-      find_maximum_path_sum(node->right, maximum_path_sum,
-                            current_path_sum + node->right->val);
-      find_maximum_path_sum(node->right, maximum_path_sum, node->right->val);
+    if (node->right && !visited_nodes.count(node->right)) {
+      find_sub_tree_maximum_path_sum(
+          node->right, maximum_path_sum, maximum_sub_tree_path_sum,
+          current_sub_tree_path_sum + node->right->val,
+          current_path_sum + node->right->val);
+      find_sub_tree_maximum_path_sum(
+          node->right, maximum_path_sum, maximum_sub_tree_path_sum,
+          current_sub_tree_path_sum + node->right->val, node->right->val);
     }
   }
 
  public:
-  int maxPathSum(const TreeNode* root) {
+  int maxPathSum(TreeNode* root) {
     if (!root)
       return 0;
 
-    int maximum_path_sum{INT_MIN};
+    int maximum_path_sum{INT_MIN}, maximum_left_tree_path_sum{INT_MIN},
+        maximum_right_tree_path_sum{INT_MIN};
 
-    find_maximum_path_sum(root, maximum_path_sum, root->val);
+    visited_nodes.clear();
+
+    if (root->left)
+      find_sub_tree_maximum_path_sum(root->left, maximum_path_sum,
+                                     maximum_left_tree_path_sum,
+                                     root->left->val, root->left->val);
+    if (root->right)
+      find_sub_tree_maximum_path_sum(root->right, maximum_path_sum,
+                                     maximum_right_tree_path_sum,
+                                     root->right->val, root->right->val);
+    if (root->val > maximum_path_sum)
+      maximum_path_sum = root->val;
+    if (root->left && maximum_left_tree_path_sum > maximum_path_sum)
+      maximum_path_sum = maximum_left_tree_path_sum;
+    if (root->right && maximum_right_tree_path_sum > maximum_path_sum)
+      maximum_path_sum = maximum_right_tree_path_sum;
+    if (root->left && maximum_left_tree_path_sum + root->val > maximum_path_sum)
+      maximum_path_sum = maximum_left_tree_path_sum + root->val;
+    if (root->right &&
+        maximum_right_tree_path_sum + root->val > maximum_path_sum)
+      maximum_path_sum = maximum_right_tree_path_sum + root->val;
+    if (root->left && root->right &&
+        maximum_left_tree_path_sum + root->val + maximum_right_tree_path_sum >
+            maximum_path_sum)
+      maximum_path_sum =
+          maximum_left_tree_path_sum + root->val + maximum_right_tree_path_sum;
 
     return maximum_path_sum;
   }
@@ -182,6 +187,27 @@ int main() {
   rc3_rc3.right = &rc3_rc3_rc3;
   cout << "s.maxPathSum([5,4,8,11,null,13,4,7,2,null,null,null,1]) -> "
        << s.maxPathSum(&root3) << '\n';  // expected output: 48
+
+  TreeNode root4{1}, lc4{-2}, rc4{-3}, lc4_lc4{1}, lc4_rc4{3}, lc4_lc4_lc4{-1},
+      lc4_lc4_rc4{-2}, rc4_lc4{-2};
+  root4.left = &lc4;
+  root4.right = &rc4;
+  lc4.left = &lc4_lc4;
+  lc4.right = &lc4_rc4;
+  lc4_lc4.left = &lc4_lc4_lc4;
+  lc4_lc4.right = &lc4_lc4_rc4;
+  rc4.left = &rc4_lc4;
+  cout << "s.maxPathSum([1,-2,-3,1,3,-2,null,-1,-2]) -> "
+       << s.maxPathSum(&root4) << '\n';  // expected output: 3
+
+  TreeNode root5{-3};
+  cout << "s.maxPathSum([-3]) -> " << s.maxPathSum(&root5)
+       << '\n';  // expected output: -3
+
+  TreeNode root6{-2}, lc6{1};
+  root6.left = &lc6;
+  cout << "s.maxPathSum([-2,1]) -> " << s.maxPathSum(&root6)
+       << '\n';  // expected output: 1
 
   return 0;
 }
