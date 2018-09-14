@@ -38,6 +38,7 @@ Output: 42
 #include <algorithm>
 #include <climits>
 #include <iostream>
+#include <unordered_set>
 
 using namespace std;
 
@@ -47,15 +48,11 @@ struct TreeNode {
   TreeNode* left;
   TreeNode* right;
   TreeNode(const int x) : val{x}, left{}, right{} {}
-  ~TreeNode() {
-    if (left)
-      delete left;
-    if (right)
-      delete right;
-  }
 };
 
 class Solution {
+  unordered_set<TreeNode*> visited_nodes;
+
   void find_sub_tree_maximum_path_sum(TreeNode* node,
                                       int& maximum_path_sum,
                                       int& maximum_sub_tree_path_sum,
@@ -67,8 +64,12 @@ class Solution {
     if (current_sub_tree_path_sum > maximum_sub_tree_path_sum)
       maximum_sub_tree_path_sum = current_sub_tree_path_sum;
 
-    if (node->left && node->right) {
+    if (node->left && visited_nodes.find(node->left) == end(visited_nodes) &&
+        node->right && visited_nodes.find(node->right) == end(visited_nodes)) {
       int left_tree_path_sum{INT_MIN}, right_tree_path_sum{INT_MIN};
+
+      visited_nodes.insert(node->left);
+      visited_nodes.insert(node->right);
 
       find_sub_tree_maximum_path_sum(node->left, maximum_path_sum,
                                      left_tree_path_sum, node->left->val,
@@ -97,13 +98,8 @@ class Solution {
       if (prev_max_path_sum + node->val > maximum_sub_tree_path_sum)
         maximum_sub_tree_path_sum = prev_max_path_sum + node->val;
 
-      // delete node->left;
-      node->left = nullptr;
-      // delete node->right;
-      node->right = nullptr;
-
     } else {
-      if (node->left) {
+      if (node->left && visited_nodes.find(node->left) == end(visited_nodes)) {
         find_sub_tree_maximum_path_sum(
             node->left, maximum_path_sum, maximum_sub_tree_path_sum,
             current_sub_tree_path_sum + node->left->val,
@@ -113,7 +109,8 @@ class Solution {
             current_sub_tree_path_sum + node->left->val, node->left->val);
       }
 
-      if (node->right) {
+      if (node->right &&
+          visited_nodes.find(node->right) == end(visited_nodes)) {
         find_sub_tree_maximum_path_sum(
             node->right, maximum_path_sum, maximum_sub_tree_path_sum,
             current_sub_tree_path_sum + node->right->val,
@@ -132,6 +129,8 @@ class Solution {
 
     int maximum_path_sum{INT_MIN}, maximum_left_tree_path_sum{INT_MIN},
         maximum_right_tree_path_sum{INT_MIN};
+
+    visited_nodes.clear();
 
     if (root->left)
       find_sub_tree_maximum_path_sum(root->left, maximum_path_sum,
