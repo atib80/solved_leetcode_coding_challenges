@@ -39,8 +39,15 @@ Output: 0
 
 Explanation: The endWord "cog" is not in wordList, therefore no possible
 transformation.
+
+My second slightly optimized (by making use of unordered_set<string>
+skip_words_) recursive solution tries to find an existing solution by
+recursively iterating backwards through input list of words, starting from
+endWord and searching for suitable intermediary words in the input sequence
+while going backwards towards beginWord.
 */
 
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <unordered_set>
@@ -109,6 +116,16 @@ class Solution {
   }
 
  public:
+  static double start_stop_timer(const bool is_start_timer = false) {
+    static chrono::high_resolution_clock::time_point start_time;
+    if (is_start_timer)
+      start_time = chrono::high_resolution_clock::now();
+
+    return chrono::duration_cast<chrono::duration<double>>(
+               chrono::high_resolution_clock::now() - start_time)
+        .count();
+  }
+
   size_t ladderLength(string beginWord,
                       string endWord,
                       vector<string>& wordList) {
@@ -173,6 +190,8 @@ class Solution {
 
 int main() {
   Solution s{};
+
+  Solution::start_stop_timer(true);
 
   vector<string> words_list1{"hot", "dot", "dog", "lot", "log", "cog"};
   cout << "s.ladderLength(hit, cog, [hot, dot, dog, lot, log, cog]) -> "
@@ -248,6 +267,8 @@ int main() {
 
   cout << "s.ladderLength(cet, ism, words_list3) -> "
        << s.ladderLength("cet", "ism", words_list3) << '\n';
+
+  cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
   return 0;
 }
