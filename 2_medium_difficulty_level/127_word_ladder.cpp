@@ -50,61 +50,14 @@ while going backwards towards beginWord.
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <queue>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 using namespace std;
 
 class Solution {
-  vector<string> words_;
-  vector<int> visited_word_indices_;
-  string begin_word_;
-  string end_word_;
-  size_t words_size_;
-
-  static bool check_if_given_two_words_only_differ_in_one_char(
-      const string& lw,
-      const string& rw) {
-    size_t diff_count{};
-
-    for (size_t i{}; i < lw.length(); i++) {
-      if (lw[i] != rw[i]) {
-        ++diff_count;
-        if (diff_count > 1)
-          return false;
-      }
-    }
-
-    return 1 == diff_count;
-  }
-
-  void find_minimum_number_of_transformation_sequences(
-      const size_t current_pos,
-      size_t& minimum_number_of_steps,
-      const size_t step_count) {
-    if (step_count + 1 >= minimum_number_of_steps)
-      return;
-
-    if (check_if_given_two_words_only_differ_in_one_char(words_[current_pos],
-                                                         begin_word_)) {
-      minimum_number_of_steps = step_count + 1;
-      return;
-    }
-
-    for (int i = words_size_ - 1; i >= 0; --i) {
-      if (visited_word_indices_[i])
-        continue;
-
-      if (check_if_given_two_words_only_differ_in_one_char(words_[current_pos],
-                                                           words_[i])) {
-        visited_word_indices_[i] = 1;
-        find_minimum_number_of_transformation_sequences(
-            i, minimum_number_of_steps, step_count + 1);
-        visited_word_indices_[i] = 0;
-      }
-    }
-  }
-
  public:
   static double start_stop_timer(const bool is_start_timer = false) {
     static chrono::high_resolution_clock::time_point start_time;
@@ -116,56 +69,42 @@ class Solution {
         .count();
   }
 
-  size_t ladderLength(string beginWord,
-                      string endWord,
-                      vector<string>& wordList) {
-    begin_word_ = move(beginWord);
-    end_word_ = move(endWord);
-    if (begin_word_ == end_word_)
+  size_t ladderLength(const string& begin_word,
+                      const string& end_word,
+                      const vector<string>& word_list) {
+    queue<string> q{{begin_word}};
+    unordered_set<string> unvisited_words(cbegin(word_list), cend(word_list));
+    unvisited_words.erase(begin_word);
+    if (unvisited_words.find(end_word) == end(unvisited_words))
       return 0;
-    words_ = move(wordList);
-
-    bool end_word_found{};
-    const auto new_end_iter{
-        remove_if(begin(words_), end(words_), [&](const string& w) {
-          if (w == end_word_) {
-            end_word_found = true;
-            return true;
+    size_t min_seq_len{2};
+    while (!q.empty()) {
+      const size_t q_len{q.size()};
+      for (size_t i{}; i < q_len; i++) {
+        string next_word{move(q.front())};
+        q.pop();
+        for (size_t j{}; j < next_word.length(); j++) {
+          const char temp_char{next_word[j]};
+          for (char ch{'a'}; ch <= 'z'; ch++) {
+            next_word[j] = ch;
+            if (unvisited_words.find(next_word) != end(unvisited_words)) {
+              if (end_word == next_word)
+                return min_seq_len;
+              else {
+                unvisited_words.erase(next_word);
+                q.emplace(next_word);
+              }
+            }
           }
 
-          if (w == begin_word_)
-            return true;
-
-          return false;
-        })};
-
-    if (!end_word_found)
-      return 0;
-
-    if (check_if_given_two_words_only_differ_in_one_char(begin_word_,
-                                                         end_word_))
-      return 2;
-
-    words_.erase(new_end_iter, end(words_));
-
-    words_size_ = words_.size();
-    visited_word_indices_.clear();
-    visited_word_indices_.resize(words_size_);
-
-    size_t minimum_number_of_steps{string::npos};
-
-    for (int i = words_size_ - 1; i >= 0; --i) {
-      if (check_if_given_two_words_only_differ_in_one_char(end_word_,
-                                                           words_[i])) {
-        visited_word_indices_[i] = 1;
-        find_minimum_number_of_transformation_sequences(
-            i, minimum_number_of_steps, 2);
-        visited_word_indices_[i] = 0;
+          next_word[j] = temp_char;
+        }
       }
+
+      min_seq_len++;
     }
 
-    return minimum_number_of_steps != string::npos ? minimum_number_of_steps
-                                                   : 0;
+    return 0;
   }
 };
 
@@ -576,3 +515,8 @@ int main() {
 
   return 0;
 }
+
+/*
+stable-x86_64-pc-windows-msvc
+nightly-x86_64-pc-windows-msvc (default)
+*/
