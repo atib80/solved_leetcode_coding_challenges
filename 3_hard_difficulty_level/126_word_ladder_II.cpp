@@ -47,6 +47,7 @@ transformation.
 #include <iostream>
 #include <queue>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -61,7 +62,7 @@ ostream& operator<<(ostream& os, const vector<T>& data) {
   os << "\n[";
   for (size_t i{}; i < data.size() - 1; i++)
     os << data[i] << ',';
-  os << data.back() << "]";
+  os << data.back() << ']';
   return os;
 }
 
@@ -86,7 +87,8 @@ class Solution {
   unordered_set<string> word_dict_{};
   string begin_word_{};
   string end_word_{};
-  size_t min_ladder_length{};
+  size_t word_len_{};
+  size_t min_ladder_length_{};
 
   size_t find_min_ladder_length() {
     queue<string> q{{begin_word_}};
@@ -130,35 +132,43 @@ class Solution {
 
   void find_minimum_number_of_transformation_sequences(
       string current_word,
+      vector<unordered_map<string, vector<char>>>&
+          substr_key_missing_chars_dict,
       const size_t step_count) {
-    if (step_count >= min_ladder_length)
+    if (step_count >= min_ladder_length_)
       return;
+
+    string key{};
+    key.reserve(word_len_);
 
     for (size_t i{}; i < current_word.length(); ++i) {
       const char orig_char{current_word[i]};
-
-      for (char ch{'a'}; ch <= 'z'; ++ch) {
-        if (orig_char == ch)
+      key.clear();
+      for (size_t j{}; j < word_len_; ++j) {
+        if (i == j)
           continue;
+        key.push_back(current_word[j]);
+      }
 
-        current_word[i] = ch;
-        if (word_dict_.find(current_word) != end(word_dict_)) {
-          if (current_word == begin_word_) {
-            current_sequence_.emplace_back(begin_word_);
-            reverse(begin(current_sequence_), end(current_sequence_));
-            found_sequences_.emplace_back(current_sequence_);
-            reverse(begin(current_sequence_), end(current_sequence_));
-            current_sequence_.pop_back();
-            return;
-          }
-
-          word_dict_.erase(current_word);
-          current_sequence_.emplace_back(current_word);
-          find_minimum_number_of_transformation_sequences(current_word,
-                                                          step_count + 1);
+      for (char& visited_ch : substr_key_missing_chars_dict[i].at(key)) {
+        if (!visited_ch || orig_char == visited_ch)
+          continue;
+        current_word[i] = visited_ch;
+        if (current_word == begin_word_) {
+          current_sequence_.emplace_back(begin_word_);
+          reverse(begin(current_sequence_), end(current_sequence_));
+          found_sequences_.emplace_back(current_sequence_);
+          reverse(begin(current_sequence_), end(current_sequence_));
           current_sequence_.pop_back();
-          word_dict_.emplace(current_word);
+          return;
         }
+
+        visited_ch = 0;
+        current_sequence_.emplace_back(current_word);
+        find_minimum_number_of_transformation_sequences(
+            current_word, substr_key_missing_chars_dict, step_count + 1);
+        current_sequence_.pop_back();
+        visited_ch = current_word[i];
       }
 
       current_word[i] = orig_char;
@@ -186,23 +196,58 @@ class Solution {
     word_dict_.insert(cbegin(word_list), cend(word_list));
     if (word_dict_.find(end_word_) == end(word_dict_))
       return {{}};
+
+    const bool begin_word_found{word_dict_.find(begin_word_) !=
+                                end(word_dict_)};
     word_dict_.erase(begin_word_);
 
-    min_ladder_length = find_min_ladder_length();
+    min_ladder_length_ = find_min_ladder_length();
 
-    if (!min_ladder_length)
+    if (!min_ladder_length_)
       return {{}};
-    if (2 == min_ladder_length)
+    if (2 == min_ladder_length_)
       return {{begin_word_, end_word_}};
 
     current_sequence_.clear();
     current_sequence_.emplace_back(end_word_);
     found_sequences_.clear();
 
-    word_dict_.erase(end_word_);
-    word_dict_.emplace(begin_word_);
+    word_len_ = begin_word_.length();
 
-    find_minimum_number_of_transformation_sequences(end_word_, 1);
+    vector<unordered_map<string, vector<char>>> substr_key_existing_chars_dict(
+        word_len_, unordered_map<string, vector<char>>{});
+
+    string key{};
+    key.reserve(word_len_);
+
+    for (const string& w : word_list) {
+      for (size_t i{}; i < word_len_; ++i) {
+        key.clear();
+        for (size_t j{}; j < word_len_; ++j) {
+          if (i == j)
+            continue;
+          key.push_back(w[j]);
+        }
+
+        substr_key_existing_chars_dict[i][key].emplace_back(w[i]);
+      }
+    }
+
+    if (!begin_word_found) {
+      for (size_t i{}; i < word_len_; ++i) {
+        key.clear();
+        for (size_t j{}; j < word_len_; ++j) {
+          if (i == j)
+            continue;
+          key.push_back(begin_word_[j]);
+        }
+
+        substr_key_existing_chars_dict[i][key].emplace_back(begin_word_[i]);
+      }
+    }
+
+    find_minimum_number_of_transformation_sequences(
+        end_word_, substr_key_existing_chars_dict, 1);
 
     return move(found_sequences_);
   }
