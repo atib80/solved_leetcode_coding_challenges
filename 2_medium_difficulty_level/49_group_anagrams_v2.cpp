@@ -1,6 +1,5 @@
 /*
-
-49. leetcode coding challenge: Group Anagrams
+49. Leetcode coding challenge: Group anagrams (difficulty level: medium)
 
 Given an array of strings, group anagrams together.
 
@@ -27,19 +26,7 @@ Note:
 #include <unordered_map>
 #include <vector>
 
-static int sres = []() {
-  std::ios::sync_with_stdio(false);
-  std::cin.tie(nullptr);
-  return 0;
-}();
-
-using std::cout;
-using std::ostream;
-using std::pair;
-using std::sort;
-using std::string;
-using std::unordered_map;
-using std::vector;
+using namespace std;
 
 template <typename T>
 ostream& operator<<(ostream& os, const vector<T>& data) {
@@ -50,7 +37,7 @@ ostream& operator<<(ostream& os, const vector<T>& data) {
   os << "\n  [";
   for (size_t i{}; i < data.size() - 1; i++)
     os << data[i] << ',';
-  os << data.back() << "]";
+  os << data.back() << ']';
   return os;
 }
 
@@ -82,16 +69,11 @@ class Solution {
 
     for (size_t i{}; i < words_size; i++) {
       if (strs[i].empty())
-        empty_words.emplace_back(move(strs[i]));
+        empty_words.emplace_back("");
       else {
         string anagram_key{strs[i]};
-
         sort(begin(anagram_key), end(anagram_key));
-        if (anagram_dict.find(anagram_key) == end(anagram_dict))
-          anagram_dict.insert(
-              make_pair(anagram_key, vector<string>{move(strs[i])}));
-        else
-          anagram_dict[anagram_key].emplace_back(move(strs[i]));
+        anagram_dict[anagram_key].emplace_back(move(strs[i]));
       }
     }
 
@@ -107,14 +89,10 @@ class Solution {
 
 int main() {
   Solution s{};
-
   vector<string> input{"eat", "tea", "tan", "ate", "nat", "bat"};
-
   vector<vector<string>> result{s.groupAnagrams(input)};
-
-  cout << "s.groupAnagrams({ \"eat\", \"tea\", \"tan\", \"ate\", \"nat\", "
-          "\"bat\"}) -> "
-       << result << '\n';
+  cout << "s.groupAnagrams({eat, tea, tan, ate, nat, bat}) -> " << result
+       << '\n';
 
   return 0;
 }
