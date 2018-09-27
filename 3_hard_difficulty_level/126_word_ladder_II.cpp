@@ -42,7 +42,6 @@ Explanation: The endWord "cog" is not in wordList, therefore no possible
 transformation.
 */
 
-#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <queue>
@@ -82,104 +81,22 @@ ostream& operator<<(ostream& os, const vector<vector<T>>& data) {
 }
 
 class Solution {
-  vector<string> current_sequence_;
-  vector<vector<string>> found_sequences_;
-  unordered_set<string> word_dict_;
-  vector<unordered_map<string, vector<char>>> substr_key_existing_chars_dict;
-  string begin_word_;
-  string end_word_;
-  size_t word_len_{};
-  size_t min_ladder_length_{};
-
-  size_t get_count_of_different_chars(const string& str) const {
-    size_t diff_count{};
-
-    for (size_t i{}; i < word_len_; ++i) {
-      if (str[i] != begin_word_[i])
-        diff_count++;
-    }
-
-    return diff_count;
-  }
-
-  size_t find_min_ladder_length() {
-    queue<string> q{{begin_word_}};
-
-    size_t min_seq_len{2};
-
-    while (!q.empty()) {
-      const size_t q_len{q.size()};
-      for (size_t i{}; i < q_len; i++) {
-        string next_word{move(q.front())};
-        q.pop();
-        for (size_t j{}; j < next_word.length(); j++) {
-          const char temp_char{next_word[j]};
-          for (char ch{'a'}; ch <= 'z'; ch++) {
-            next_word[j] = ch;
-            if (word_dict_.find(next_word) != end(word_dict_)) {
-              if (end_word_ == next_word)
-                return min_seq_len;
-              word_dict_.erase(next_word);
-              q.emplace(next_word);
-            }
-          }
-
-          next_word[j] = temp_char;
-        }
-      }
-
-      min_seq_len++;
-    }
-
-    return 0;
-  }
-
-  void find_minimum_number_of_transformation_sequences(
-      string& current_word,
-      string& key,
-      const size_t prev_index,
-      const size_t step_count) {
-    if (step_count + get_count_of_different_chars(current_word) >
-        min_ladder_length_)
+  void dfs(const string& end_word,
+           const string& current_word,
+           const unordered_map<string, vector<string>>& children,
+           vector<string>& transform_seq,
+           vector<vector<string>>& output) {
+    if (current_word == end_word) {
+      output.emplace_back(transform_seq);
       return;
+    }
 
-    for (size_t i{}; i < current_word.length(); ++i) {
-      if (prev_index == i)
-        continue;
-      const char orig_char{current_word[i]};
-      key.clear();
-      for (size_t j{}; j < word_len_; ++j) {
-        if (i == j)
-          continue;
-        key.push_back(current_word[j]);
+    if (children.find(current_word) != end(children)) {
+      for (const string& edge : children.at(current_word)) {
+        transform_seq.emplace_back(edge);
+        dfs(end_word, edge, children, transform_seq, output);
+        transform_seq.pop_back();
       }
-
-      vector<char>& chars{substr_key_existing_chars_dict[i].at(key)};
-
-      for (char& visited_ch : chars) {
-        if (!visited_ch || orig_char == visited_ch)
-          continue;
-        current_word[i] = visited_ch;
-
-        if (current_word == begin_word_) {
-          current_sequence_.emplace_back(begin_word_);
-          reverse(begin(current_sequence_), end(current_sequence_));
-          found_sequences_.emplace_back(current_sequence_);
-          reverse(begin(current_sequence_), end(current_sequence_));
-          current_sequence_.pop_back();
-          current_word[i] = orig_char;
-          return;
-        }
-
-        visited_ch = 0;
-        current_sequence_.emplace_back(current_word);
-        find_minimum_number_of_transformation_sequences(current_word, key, i,
-                                                        step_count + 1);
-        current_sequence_.pop_back();
-        visited_ch = current_word[i];
-      }
-
-      current_word[i] = orig_char;
     }
   }
 
@@ -194,72 +111,79 @@ class Solution {
         .count();
   }
 
-  vector<vector<string>> findLadders(string begin_word,
-                                     string end_word,
+  vector<vector<string>> findLadders(const string& begin_word,
+                                     const string& end_word,
                                      const vector<string>& word_list) {
+    unordered_set<string> word_dict(cbegin(word_list), cend(word_list));
+    if (word_dict.find(end_word) == end(word_dict))
+      return {};
+
+    word_dict.erase(begin_word);
+
+    const size_t word_len{begin_word.length()};
+    unordered_map<string, size_t> levels{{begin_word, 1u}};
+    unordered_map<string, vector<string>> children{};
+    unordered_map<string, size_t> from_pos{{begin_word, string::npos}};
+
+    queue<string> q{{begin_word}};
+    size_t current_level{};
+    bool end_word_found{};
+
+    while (!q.empty() && !end_word_found) {
+      ++current_level;
+      const size_t current_level_size{q.size()};
+      for (size_t i{}; i < current_level_size; ++i) {
+        string prev_word{move(q.front())};
+        string next_word{prev_word};
+        q.pop();
+
+        for (size_t j{}; j < word_len; ++j) {
+          if (j == from_pos[prev_word])
+            continue;
+          const char orig_char{prev_word[j]};
+
+          for (char ch{'a'}; ch <= 'z'; ++ch) {
+            if (orig_char == ch)
+              continue;
+
+            next_word[j] = ch;
+
+            if (next_word == end_word ||
+                word_dict.find(next_word) != end(word_dict)) {
+              levels[next_word] = current_level + 1;
+              children[prev_word].emplace_back(next_word);
+              word_dict.erase(next_word);
+
+              if (next_word == end_word)
+                end_word_found = true;
+              else {
+                q.emplace(next_word);
+                from_pos[next_word] = j;
+              }
+            } else {
+              const auto iter{levels.find(next_word)};
+              if (iter != end(levels) && current_level + 1 == iter->second) {
+                from_pos[next_word] = j;
+                children[prev_word].emplace_back(next_word);
+              }
+            }
+          }
+
+          next_word[j] = orig_char;
+        }
+      }
+    }
+
     vector<vector<string>> result_set{};
-    begin_word_ = move(begin_word);
-    end_word_ = move(end_word);
-    word_dict_.clear();
-    word_dict_.insert(cbegin(word_list), cend(word_list));
-    if (word_dict_.find(end_word_) == end(word_dict_))
-      return {};
 
-    const bool begin_word_found{word_dict_.find(begin_word_) !=
-                                end(word_dict_)};
-    word_dict_.erase(begin_word_);
-
-    min_ladder_length_ = find_min_ladder_length();
-
-    if (!min_ladder_length_)
-      return {};
-    if (2 == min_ladder_length_)
-      return {{begin_word_, end_word_}};
-
-    current_sequence_.clear();
-    current_sequence_.reserve(min_ladder_length_);
-    current_sequence_.emplace_back(end_word_);
-    found_sequences_.clear();
-
-    word_len_ = begin_word_.length();
-
-    substr_key_existing_chars_dict.clear();
-    substr_key_existing_chars_dict.resize(
-        word_len_, unordered_map<string, vector<char>>{});
-
-    string key{};
-    key.reserve(word_len_);
-
-    for (const string& w : word_list) {
-      for (size_t i{}; i < word_len_; ++i) {
-        key.clear();
-        for (size_t j{}; j < word_len_; ++j) {
-          if (i == j)
-            continue;
-          key.push_back(w[j]);
-        }
-
-        substr_key_existing_chars_dict[i][key].emplace_back(w[i]);
-      }
+    if (end_word_found) {
+      vector<string> transform_seq{};
+      transform_seq.reserve(current_level + 1);
+      transform_seq.emplace_back(begin_word);
+      dfs(end_word, begin_word, children, transform_seq, result_set);
     }
 
-    if (!begin_word_found) {
-      for (size_t i{}; i < word_len_; ++i) {
-        key.clear();
-        for (size_t j{}; j < word_len_; ++j) {
-          if (i == j)
-            continue;
-          key.push_back(begin_word_[j]);
-        }
-
-        substr_key_existing_chars_dict[i][key].emplace_back(begin_word_[i]);
-      }
-    }
-
-    find_minimum_number_of_transformation_sequences(end_word_, key,
-                                                    string::npos, 1);
-
-    return move(found_sequences_);
+    return result_set;
   }
 };
 
@@ -1266,7 +1190,6 @@ int main() {
                 //[[nanny,canny,candy,sandy,sands,sends,seeds,sleds,slews,clews,clefs,cleft,cleat,bleat,bloat,float,flout,clout,cloud,aloud],
                 // [nanny,danny,dandy,sandy,sands,sends,seeds,sleds,slews,clews,clefs,cleft,cleat,bleat,bloat,float,flout,clout,cloud,aloud]]
 
-  /*
   vector<string> word_list6{
       "shanny", "shinny", "whinny", "whiney", "shiver", "sharer", "scarer",
       "scaler", "render", "fluxes", "teases", "starks", "clinks", "messrs",
@@ -1646,7 +1569,6 @@ int main() {
   const vector<vector<string>> output6{
       s.findLadders("charge", "comedo", word_list6)};
   cout << "s.findLadders(charge, comedo, word_list6) -> " << output6 << '\n';
-  */
 
   cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
