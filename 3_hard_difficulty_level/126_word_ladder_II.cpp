@@ -121,9 +121,9 @@ class Solution {
     word_dict.erase(begin_word);
 
     const size_t word_len{begin_word.length()};
-    unordered_map<string, size_t> levels{{begin_word, 1u}};
+    unordered_map<string, pair<size_t, size_t>> levels_from_pos{
+        {begin_word, {1u, string::npos}}};
     unordered_map<string, vector<string>> children{};
-    unordered_map<string, size_t> from_pos{{begin_word, string::npos}};
 
     queue<string> q{{begin_word}};
     size_t current_level{};
@@ -138,7 +138,7 @@ class Solution {
         q.pop();
 
         for (size_t j{}; j < word_len; ++j) {
-          if (j == from_pos[prev_word])
+          if (j == levels_from_pos[prev_word].second)
             continue;
           const char orig_char{prev_word[j]};
 
@@ -150,7 +150,7 @@ class Solution {
 
             if (next_word == end_word ||
                 word_dict.find(next_word) != end(word_dict)) {
-              levels[next_word] = current_level + 1;
+              levels_from_pos[next_word].first = current_level + 1;
               children[prev_word].emplace_back(next_word);
               word_dict.erase(next_word);
 
@@ -158,12 +158,13 @@ class Solution {
                 end_word_found = true;
               else {
                 q.emplace(next_word);
-                from_pos[next_word] = j;
+                levels_from_pos[next_word].second = j;
               }
             } else {
-              const auto iter{levels.find(next_word)};
-              if (iter != end(levels) && current_level + 1 == iter->second) {
-                from_pos[next_word] = j;
+              const auto iter{levels_from_pos.find(next_word)};
+              if (iter != end(levels_from_pos) &&
+                  current_level + 1 == iter->second.first) {
+                levels_from_pos[next_word].second = j;
                 children[prev_word].emplace_back(next_word);
               }
             }
@@ -175,6 +176,7 @@ class Solution {
     }
 
     vector<vector<string>> result_set{};
+    result_set.reserve(32);
 
     if (end_word_found) {
       vector<string> transform_seq{};
