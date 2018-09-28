@@ -118,9 +118,41 @@ class Solution {
     if (word_dict.find(end_word) == end(word_dict))
       return {};
 
-    word_dict.erase(begin_word);
-
     const size_t word_len{begin_word.length()};
+
+    vector<unordered_map<string, vector<char>>> substr_key_existing_chars_dict(
+        word_len, unordered_map<string, vector<char>>{});
+
+    string key{};
+    key.reserve(word_len);
+
+    if (word_dict.find(begin_word) == end(word_dict)) {
+      for (size_t i{}; i < word_len; ++i) {
+        key.clear();
+        for (size_t j{}; j < word_len; ++j) {
+          if (i == j)
+            continue;
+          key.push_back(begin_word[j]);
+        }
+
+        substr_key_existing_chars_dict[i][key].emplace_back(begin_word[i]);
+      }
+    } else
+      word_dict.erase(begin_word);
+
+    for (const string& w : word_list) {
+      for (size_t i{}; i < word_len; ++i) {
+        key.clear();
+        for (size_t j{}; j < word_len; ++j) {
+          if (i == j)
+            continue;
+          key.push_back(w[j]);
+        }
+
+        substr_key_existing_chars_dict[i][key].emplace_back(w[i]);
+      }
+    }
+
     unordered_map<string, pair<size_t, size_t>> levels_from_pos{
         {begin_word, {1u, string::npos}}};
     unordered_map<string, vector<string>> children{};
@@ -141,8 +173,16 @@ class Solution {
           if (j == levels_from_pos[prev_word].second)
             continue;
           const char orig_char{prev_word[j]};
+          key.clear();
+          for (size_t m{}; m < word_len; ++m) {
+            if (m == j)
+              continue;
+            key.push_back(prev_word[m]);
+          }
 
-          for (char ch{'a'}; ch <= 'z'; ++ch) {
+          const vector<char>& chars{substr_key_existing_chars_dict[j].at(key)};
+
+          for (const char& ch : chars) {
             if (orig_char == ch)
               continue;
 
