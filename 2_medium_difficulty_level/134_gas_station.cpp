@@ -55,28 +55,55 @@ once no matter where you start.
 
 using namespace std;
 
+struct travel_path {
+  size_t start_gas_station_index;
+  size_t current_gas_station_index;
+  int total_gas;
+  bool out_of_gas;
+
+  travel_path(const size_t start_index,
+              const size_t current_index,
+              const int gas,
+              const bool no_more_gas = false)
+      : start_gas_station_index{start_index},
+        current_gas_station_index{current_index},
+        total_gas{gas},
+        out_of_gas{no_more_gas} {}
+};
+
 class Solution {
  public:
   int canCompleteCircuit(const vector<int>& gas,
                          const vector<int>& cost) const {
     const size_t count_of_gas_stations{gas.size()};
 
-    for (size_t i{}; i < count_of_gas_stations; i++) {
-      size_t ci{i};
-      int gallons{};
+    vector<travel_path> travel_paths{};
+    travel_paths.reserve(count_of_gas_stations);
 
-      while (true) {
-        gallons += gas[ci];
+    for (size_t i{}; i < count_of_gas_stations; i++)
+      travel_paths.emplace_back(i, i, gas[i]);
 
-        if (cost[ci] > gallons)
-          break;
+    for (size_t c{}; c < count_of_gas_stations; c++) {
+      for (size_t i{}; i < count_of_gas_stations; i++) {
+        if (travel_paths[i].out_of_gas)
+          continue;
 
-        gallons -= cost[ci];
+        const size_t current_index{travel_paths[i].current_gas_station_index};
 
-        ci = ci + 1 == count_of_gas_stations ? 0 : ci + 1;
+        if (cost[current_index] > travel_paths[i].total_gas) {
+          travel_paths[i].out_of_gas = true;
+          continue;
+        }
 
-        if (ci == i)
-          return i;
+        travel_paths[i].total_gas -= cost[current_index];
+        const size_t next_index{
+            current_index + 1 == count_of_gas_stations ? 0 : current_index + 1};
+
+        if (next_index == travel_paths[i].start_gas_station_index)
+          return next_index;
+
+        travel_paths[i].current_gas_station_index = next_index;
+        travel_paths[i].total_gas += gas[next_index];
       }
     }
 
