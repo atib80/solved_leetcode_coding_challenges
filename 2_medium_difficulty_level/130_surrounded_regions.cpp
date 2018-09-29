@@ -29,191 +29,144 @@ cells are connected if they are adjacent cells connected horizontally or
 vertically.
 */
 
+#include <chrono>
 #include <iostream>
-#include <queue>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
 using namespace std;
 
-static size_t row_size, col_size;
-
-// namespace std {
-template <>
-struct hash<pair<size_t, size_t>> {
-  size_t operator()(const pair<size_t, size_t>& p) const noexcept {
-    return p.first * col_size + p.second;
-  }
-};
-// }
-
 class Solution {
-  bool find_and_mark_neighboring_holes(
-      const size_t x,
-      const size_t y,
-      const vector<vector<char>>& board,
-      unordered_set<pair<size_t, size_t>>& found_region_coordinates,
-      vector<vector<int>>& skip_open_region_coordinates) const {
-    if (!x || !y || row_size - 1 == x || col_size - 1 == y) {
-      skip_open_region_coordinates[x][y] = 1;
+  vector<vector<char>> board_;
+  vector<vector<int>> skip_open_region_coordinates_;
+  size_t row_size_, col_size_;
+
+  bool find_surrounded_range(const size_t x, const size_t y) {
+    if (!x || !y || row_size_ - 1 == x || col_size_ - 1 == y)
       return false;
+
+    board_[x][y] = 'X';
+
+    if (x > 0 && 'O' == board_[x - 1][y]) {
+      if (!find_surrounded_range(x - 1, y)) {
+        board_[x - 1][y] = 'O';
+        return false;
+      }
     }
 
-    found_region_coordinates.emplace(x, y);
-    skip_open_region_coordinates[x][y] = 1;
-
-    if (x > 0 && !skip_open_region_coordinates[x - 1][y] &&
-        'O' == board[x - 1][y]) {
-      if (!find_and_mark_neighboring_holes(x - 1, y, board,
-                                           found_region_coordinates,
-                                           skip_open_region_coordinates))
+    if (x < row_size_ - 1 && 'O' == board_[x + 1][y]) {
+      if (!find_surrounded_range(x + 1, y)) {
+        board_[x + 1][y] = 'O';
         return false;
+      }
     }
 
-    if (x < row_size - 1 && !skip_open_region_coordinates[x + 1][y] &&
-        'O' == board[x + 1][y]) {
-      if (!find_and_mark_neighboring_holes(x + 1, y, board,
-                                           found_region_coordinates,
-                                           skip_open_region_coordinates))
+    if (y > 0 && 'O' == board_[x][y - 1]) {
+      if (!find_surrounded_range(x, y - 1)) {
+        board_[x][y - 1] = 'O';
         return false;
+      }
     }
 
-    if (y > 0 && !skip_open_region_coordinates[x][y - 1] &&
-        'O' == board[x][y - 1]) {
-      if (!find_and_mark_neighboring_holes(x, y - 1, board,
-                                           found_region_coordinates,
-                                           skip_open_region_coordinates))
+    if (y < col_size_ - 1 && 'O' == board_[x][y + 1]) {
+      if (!find_surrounded_range(x, y + 1)) {
+        board_[x][y + 1] = 'O';
         return false;
-    }
-
-    if (y < col_size - 1 && !skip_open_region_coordinates[x][y + 1] &&
-        'O' == board[x][y + 1]) {
-      if (!find_and_mark_neighboring_holes(x, y + 1, board,
-                                           found_region_coordinates,
-                                           skip_open_region_coordinates))
-        return false;
+      }
     }
 
     return true;
   }
 
-  void ignore_open_range_coordinates(
-      const size_t x,
-      const size_t y,
-      const vector<vector<char>>& board,
-      vector<vector<int>>& skip_open_region_coordinates) const {
-    skip_open_region_coordinates[x][y] = 1;
+  void ignore_open_range_coordinates(const size_t x, const size_t y) {
+    skip_open_region_coordinates_[x][y] = 1;
 
-    if (x > 0 && !skip_open_region_coordinates[x - 1][y] &&
-        'O' == board[x - 1][y])
-      ignore_open_range_coordinates(x - 1, y, board,
-                                    skip_open_region_coordinates);
+    if (x > 0 && !skip_open_region_coordinates_[x - 1][y] &&
+        'O' == board_[x - 1][y])
+      ignore_open_range_coordinates(x - 1, y);
 
-    if (x < row_size - 1 && !skip_open_region_coordinates[x + 1][y] &&
-        'O' == board[x + 1][y])
-      ignore_open_range_coordinates(x + 1, y, board,
-                                    skip_open_region_coordinates);
+    if (x < row_size_ - 1 && !skip_open_region_coordinates_[x + 1][y] &&
+        'O' == board_[x + 1][y])
+      ignore_open_range_coordinates(x + 1, y);
 
-    if (y > 0 && !skip_open_region_coordinates[x][y - 1] &&
-        'O' == board[x][y - 1])
-      ignore_open_range_coordinates(x, y - 1, board,
-                                    skip_open_region_coordinates);
+    if (y > 0 && !skip_open_region_coordinates_[x][y - 1] &&
+        'O' == board_[x][y - 1])
+      ignore_open_range_coordinates(x, y - 1);
 
-    if (y < col_size - 1 && !skip_open_region_coordinates[x][y + 1] &&
-        'O' == board[x][y + 1])
-      ignore_open_range_coordinates(x, y + 1, board,
-                                    skip_open_region_coordinates);
+    if (y < col_size_ - 1 && !skip_open_region_coordinates_[x][y + 1] &&
+        'O' == board_[x][y + 1])
+      ignore_open_range_coordinates(x, y + 1);
   }
 
-  void print_board_contents(const vector<vector<char>>& board) const {
+ public:
+  void solve(vector<vector<char>>& board) {
     if (board.empty())
+      return;
+    board_ = move(board);
+    row_size_ = board_.size();
+    col_size_ = board_[0].size();
+
+    print_board_contents();
+
+    skip_open_region_coordinates_.clear();
+    skip_open_region_coordinates_.resize(row_size_, vector<int>(col_size_, 0));
+
+    for (size_t i{}; i < row_size_; i++) {
+      for (size_t j{}; j < col_size_; j++) {
+        if (skip_open_region_coordinates_[i][j])
+          continue;
+
+        if ('O' == board_[i][j]) {
+          if (!find_surrounded_range(i, j)) {
+            board_[i][j] = 'O';
+            ignore_open_range_coordinates(i, j);
+          }
+        } else
+          skip_open_region_coordinates_[i][j] = 1;
+      }
+    }
+
+    print_board_contents();
+  }
+
+  void print_board_contents() const {
+    if (board_.empty())
       return;
 
     printf("\n");
 
-    for (size_t i{}; i < col_size; i++)
+    for (size_t i{}; i < col_size_; i++)
       printf("--");
 
-    for (size_t i{}; i < row_size; i++) {
+    for (size_t i{}; i < row_size_; i++) {
       printf("\n|");
-
-      for (size_t j{}; j < col_size; j++) {
-        printf("%c|", board[i][j]);
-      }
+      for (size_t j{}; j < col_size_; j++)
+        printf("%c|", board_[i][j]);
     }
 
     printf("\n");
 
-    for (size_t i{}; i < col_size; i++)
+    for (size_t i{}; i < col_size_; i++)
       printf("--");
 
     printf("\n");
   }
 
-  bool check_if_region_of_Os_is_surrounded_by_Xs(
-      const unordered_set<pair<size_t, size_t>>& found_region_coordinates,
-      vector<vector<int>>& skip_open_region_coordinates) const {
-    const size_t last_row_index{row_size - 1};
-    const size_t last_col_index{col_size - 1};
+  static double start_stop_timer(const bool is_start_timer = false) {
+    static chrono::high_resolution_clock::time_point start_time;
+    if (is_start_timer)
+      start_time = chrono::high_resolution_clock::now();
 
-    for (const pair<size_t, size_t>& coord : found_region_coordinates) {
-      if (!coord.first || !coord.second || last_row_index == coord.first ||
-          last_col_index == coord.second) {
-        for (const pair<size_t, size_t>& p : found_region_coordinates)
-          skip_open_region_coordinates[p.first][p.second] = 1;
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  void convert_region_of_Os_to_Xs(
-      const unordered_set<pair<size_t, size_t>>& found_region_coordinates,
-      vector<vector<char>>& board) const {
-    for (const pair<size_t, size_t>& coord : found_region_coordinates)
-      board[coord.first][coord.second] = 'X';
-  }
-
- public:
-  void solve(vector<vector<char>>& board) const {
-    row_size = board.size();
-    col_size = board[0].size();
-    const size_t last_row_index{row_size - 1};
-    const size_t last_col_index{col_size - 1};
-
-    print_board_contents(board);
-
-    unordered_set<pair<size_t, size_t>> found_region_coordinates{};
-    vector<vector<int>> skip_open_region_coordinates(row_size,
-                                                     vector<int>(col_size, 0));
-
-    for (size_t i{1}; i < row_size - 1; i++) {
-      for (size_t j{1}; j < col_size - 1; j++) {
-        if (skip_open_region_coordinates[i][j])
-          continue;
-
-        if ('O' == board[i][j]) {
-          cout << "Entering cell 'O' at (" << i << ',' << j << ")\n";
-          found_region_coordinates.clear();
-          if (find_and_mark_neighboring_holes(i, j, board,
-                                              found_region_coordinates,
-                                              skip_open_region_coordinates))
-            convert_region_of_Os_to_Xs(found_region_coordinates, board);
-          else
-            ignore_open_range_coordinates(i, j, board,
-                                          skip_open_region_coordinates);
-        }
-      }
-    }
-
-    print_board_contents(board);
+    return chrono::duration_cast<chrono::duration<double>>(
+               chrono::high_resolution_clock::now() - start_time)
+        .count();
   }
 };
 
 int main() {
   Solution s{};
+
+  Solution::start_stop_timer(true);
 
   vector<vector<char>> input1{{'X', 'X', 'X', 'X'},
                               {'X', 'O', 'O', 'X'},
@@ -265,6 +218,36 @@ int main() {
        'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O'}};
 
   s.solve(input2);
+
+  vector<vector<char>> input3{
+      {'X', 'O', 'X', 'O', 'X', 'O', 'O', 'O', 'X', 'O'},
+      {'X', 'O', 'O', 'X', 'X', 'X', 'O', 'O', 'O', 'X'},
+      {'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'X', 'X'},
+      {'O', 'O', 'O', 'O', 'O', 'O', 'X', 'O', 'O', 'X'},
+      {'O', 'O', 'X', 'X', 'O', 'X', 'X', 'O', 'O', 'O'},
+      {'X', 'O', 'O', 'X', 'X', 'X', 'O', 'X', 'X', 'O'},
+      {'X', 'O', 'X', 'O', 'O', 'X', 'X', 'O', 'X', 'O'},
+      {'X', 'X', 'O', 'X', 'X', 'O', 'X', 'O', 'O', 'X'},
+      {'O', 'O', 'O', 'O', 'X', 'O', 'X', 'O', 'X', 'O'},
+      {'X', 'X', 'O', 'X', 'X', 'X', 'X', 'O', 'O', 'O'}};
+
+  s.solve(input3);
+
+  vector<vector<char>> input4{
+      {'X', 'O', 'X', 'O', 'X', 'O', 'O', 'O', 'X', 'O'},
+      {'X', 'O', 'O', 'X', 'X', 'X', 'O', 'O', 'O', 'X'},
+      {'O', 'O', 'O', 'O', 'O', 'O', 'O', 'O', 'X', 'X'},
+      {'O', 'O', 'O', 'O', 'O', 'O', 'X', 'O', 'O', 'X'},
+      {'O', 'O', 'X', 'X', 'O', 'X', 'X', 'O', 'O', 'O'},
+      {'X', 'O', 'O', 'X', 'X', 'X', 'X', 'X', 'X', 'O'},
+      {'X', 'O', 'X', 'X', 'X', 'X', 'X', 'O', 'X', 'O'},
+      {'X', 'X', 'O', 'X', 'X', 'X', 'X', 'O', 'O', 'X'},
+      {'O', 'O', 'O', 'O', 'X', 'X', 'X', 'O', 'X', 'O'},
+      {'X', 'X', 'O', 'X', 'X', 'X', 'X', 'O', 'O', 'O'}};
+
+  s.solve(input4);
+
+  cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
   return 0;
 }
