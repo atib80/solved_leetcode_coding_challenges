@@ -31,106 +31,111 @@ vertically.
 
 #include <chrono>
 #include <iostream>
-#include <utility>
 #include <vector>
 
 using namespace std;
 
 class Solution {
-  vector<vector<char>> board_;
   vector<vector<int>> skip_open_region_coordinates_;
   size_t row_size_, col_size_;
 
-  bool find_surrounded_range(const size_t x, const size_t y) {
-    if (!x || !y || row_size_ - 1 == x || col_size_ - 1 == y)
-      return false;
+  void replace_surrounded_Os_with_Xs(const size_t x,
+                                     const size_t y,
+                                     vector<vector<char>>& board) {
+    board[x][y] = 'X';
+    skip_open_region_coordinates_[x][y] = 1;
 
-    board_[x][y] = 'X';
-
-    if (x > 0 && 'O' == board_[x - 1][y]) {
-      if (!find_surrounded_range(x - 1, y)) {
-        board_[x - 1][y] = 'O';
-        return false;
-      }
-    }
-
-    if (x < row_size_ - 1 && 'O' == board_[x + 1][y]) {
-      if (!find_surrounded_range(x + 1, y)) {
-        board_[x + 1][y] = 'O';
-        return false;
-      }
-    }
-
-    if (y > 0 && 'O' == board_[x][y - 1]) {
-      if (!find_surrounded_range(x, y - 1)) {
-        board_[x][y - 1] = 'O';
-        return false;
-      }
-    }
-
-    if (y < col_size_ - 1 && 'O' == board_[x][y + 1]) {
-      if (!find_surrounded_range(x, y + 1)) {
-        board_[x][y + 1] = 'O';
-        return false;
-      }
-    }
-
-    return true;
+    if (x > 0 && 'O' == board[x - 1][y])
+      replace_surrounded_Os_with_Xs(x - 1, y, board);
+    if (x < row_size_ - 1 && 'O' == board[x + 1][y])
+      replace_surrounded_Os_with_Xs(x + 1, y, board);
+    if (y > 0 && 'O' == board[x][y - 1])
+      replace_surrounded_Os_with_Xs(x, y - 1, board);
+    if (y < col_size_ - 1 && 'O' == board[x][y + 1])
+      replace_surrounded_Os_with_Xs(x, y + 1, board);
   }
 
-  void ignore_open_range_coordinates(const size_t x, const size_t y) {
+  void ignore_open_range_coordinates(const size_t x,
+                                     const size_t y,
+                                     const vector<vector<char>>& board) {
     skip_open_region_coordinates_[x][y] = 1;
 
     if (x > 0 && !skip_open_region_coordinates_[x - 1][y] &&
-        'O' == board_[x - 1][y])
-      ignore_open_range_coordinates(x - 1, y);
+        'O' == board[x - 1][y])
+      ignore_open_range_coordinates(x - 1, y, board);
 
     if (x < row_size_ - 1 && !skip_open_region_coordinates_[x + 1][y] &&
-        'O' == board_[x + 1][y])
-      ignore_open_range_coordinates(x + 1, y);
+        'O' == board[x + 1][y])
+      ignore_open_range_coordinates(x + 1, y, board);
 
     if (y > 0 && !skip_open_region_coordinates_[x][y - 1] &&
-        'O' == board_[x][y - 1])
-      ignore_open_range_coordinates(x, y - 1);
+        'O' == board[x][y - 1])
+      ignore_open_range_coordinates(x, y - 1, board);
 
     if (y < col_size_ - 1 && !skip_open_region_coordinates_[x][y + 1] &&
-        'O' == board_[x][y + 1])
-      ignore_open_range_coordinates(x, y + 1);
+        'O' == board[x][y + 1])
+      ignore_open_range_coordinates(x, y + 1, board);
   }
 
  public:
   void solve(vector<vector<char>>& board) {
     if (board.empty())
       return;
-    board_ = move(board);
-    row_size_ = board_.size();
-    col_size_ = board_[0].size();
+    row_size_ = board.size();
+    col_size_ = board[0].size();
 
-    print_board_contents();
+    print_board_contents(board);
 
     skip_open_region_coordinates_.clear();
     skip_open_region_coordinates_.resize(row_size_, vector<int>(col_size_, 0));
 
-    for (size_t i{}; i < row_size_; i++) {
-      for (size_t j{}; j < col_size_; j++) {
+    for (size_t i{}, j{}; i < row_size_; i++) {
+      if (skip_open_region_coordinates_[i][j])
+        continue;
+
+      if ('O' == board[i][j])
+        ignore_open_range_coordinates(i, j, board);
+    }
+
+    for (size_t i{}, j{col_size_ - 1}; i < row_size_; i++) {
+      if (skip_open_region_coordinates_[i][j])
+        continue;
+
+      if ('O' == board[i][j])
+        ignore_open_range_coordinates(i, j, board);
+    }
+
+    for (size_t i{}, j{}; j < col_size_; j++) {
+      if (skip_open_region_coordinates_[i][j])
+        continue;
+
+      if ('O' == board[i][j])
+        ignore_open_range_coordinates(i, j, board);
+    }
+
+    for (size_t i{row_size_ - 1}, j{}; j < col_size_; j++) {
+      if (skip_open_region_coordinates_[i][j])
+        continue;
+
+      if ('O' == board[i][j])
+        ignore_open_range_coordinates(i, j, board);
+    }
+
+    for (size_t i{1}; i < row_size_ - 1; i++) {
+      for (size_t j{1}; j < col_size_ - 1; j++) {
         if (skip_open_region_coordinates_[i][j])
           continue;
 
-        if ('O' == board_[i][j]) {
-          if (!find_surrounded_range(i, j)) {
-            board_[i][j] = 'O';
-            ignore_open_range_coordinates(i, j);
-          }
-        } else
-          skip_open_region_coordinates_[i][j] = 1;
+        if ('O' == board[i][j])
+          replace_surrounded_Os_with_Xs(i, j, board);
       }
     }
 
-    print_board_contents();
+    print_board_contents(board);
   }
 
-  void print_board_contents() const {
-    if (board_.empty())
+  void print_board_contents(const vector<vector<char>>& board) const {
+    if (board.empty())
       return;
 
     printf("\n");
@@ -141,7 +146,7 @@ class Solution {
     for (size_t i{}; i < row_size_; i++) {
       printf("\n|");
       for (size_t j{}; j < col_size_; j++)
-        printf("%c|", board_[i][j]);
+        printf("%c|", board[i][j]);
     }
 
     printf("\n");
@@ -251,3 +256,14 @@ int main() {
 
   return 0;
 }
+
+/*
+Input:
+[["X","X","X","X","O","O","X","X","O"],["O","O","O","O","X","X","O","O","X"],["X","O","X","O","O","X","X","O","X"],["O","O","X","X","X","O","O","O","O"],["X","O","O","X","X","X","X","X","O"],["O","O","X","O","X","O","X","O","X"],["O","O","O","X","X","O","X","O","X"],["O","O","O","X","O","O","O","X","O"],["O","X","O","O","O","X","O","X","O"]]
+
+Output:
+[["X","X","X","X","O","O","X","X","O"],["O","O","O","O","X","X","O","O","X"],["X","O","X","O","O","X","X","O","X"],["O","O","X","X","X","X","X","O","O"],["X","O","O","X","X","X","X","X","O"],["O","O","X","X","X","O","X","X","X"],["O","O","O","X","X","O","X","X","X"],["O","O","O","X","O","O","O","X","O"],["O","X","O","O","O","X","O","X","O"]]
+
+Expected:
+[["X","X","X","X","O","O","X","X","O"],["O","O","O","O","X","X","O","O","X"],["X","O","X","O","O","X","X","O","X"],["O","O","X","X","X","O","O","O","O"],["X","O","O","X","X","X","X","X","O"],["O","O","X","X","X","O","X","X","X"],["O","O","O","X","X","O","X","X","X"],["O","O","O","X","O","O","O","X","O"],["O","X","O","O","O","X","O","X","O"]]
+*/
