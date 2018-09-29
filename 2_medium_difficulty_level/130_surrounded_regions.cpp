@@ -43,7 +43,6 @@ class Solution {
                                      const size_t y,
                                      vector<vector<char>>& board) {
     board[x][y] = 'X';
-    skip_open_region_coordinates_[x][y] = 1;
 
     if (x > 0 && 'O' == board[x - 1][y])
       replace_surrounded_Os_with_Xs(x - 1, y, board);
@@ -256,14 +255,3 @@ int main() {
 
   return 0;
 }
-
-/*
-Input:
-[["X","X","X","X","O","O","X","X","O"],["O","O","O","O","X","X","O","O","X"],["X","O","X","O","O","X","X","O","X"],["O","O","X","X","X","O","O","O","O"],["X","O","O","X","X","X","X","X","O"],["O","O","X","O","X","O","X","O","X"],["O","O","O","X","X","O","X","O","X"],["O","O","O","X","O","O","O","X","O"],["O","X","O","O","O","X","O","X","O"]]
-
-Output:
-[["X","X","X","X","O","O","X","X","O"],["O","O","O","O","X","X","O","O","X"],["X","O","X","O","O","X","X","O","X"],["O","O","X","X","X","X","X","O","O"],["X","O","O","X","X","X","X","X","O"],["O","O","X","X","X","O","X","X","X"],["O","O","O","X","X","O","X","X","X"],["O","O","O","X","O","O","O","X","O"],["O","X","O","O","O","X","O","X","O"]]
-
-Expected:
-[["X","X","X","X","O","O","X","X","O"],["O","O","O","O","X","X","O","O","X"],["X","O","X","O","O","X","X","O","X"],["O","O","X","X","X","O","O","O","O"],["X","O","O","X","X","X","X","X","O"],["O","O","X","X","X","O","X","X","X"],["O","O","O","X","X","O","X","X","X"],["O","O","O","X","O","O","O","X","O"],["O","X","O","O","O","X","O","X","O"]]
-*/
