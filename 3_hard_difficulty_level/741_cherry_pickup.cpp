@@ -39,32 +39,88 @@ It is guaranteed that grid[0][0] and grid[N-1][N-1] are not -1.
 */
 
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
 
 using namespace std;
 
-struct Cell {
-  const size_t x;
-  const size_t y;
-  const int value;
-
-  explicit Cell(const size_t x_coord, const size_t y_coord, const int v)
-      : x{x_coord}, y{y_coord}, value{v} {}
-};
-
 class Solution {
   vector<vector<int>> grid_;
-  vector<Cell> visited_cells_going_right_and_down;
   size_t grid_width_{};
   size_t grid_height_{};
+  size_t max_cherry_count_{};
 
-  static inline size_t distance(const size_t x1,
-                                const size_t y1,
-                                const size_t x2,
-                                const size_t y2) {
-    return (x1 > x2 ? x1 - x2 : x2 - x1) + (y1 > y2 ? y1 - y2 : y2 - y1);
+  static inline int distance(const int x1,
+                             const int y1,
+                             const int x2,
+                             const int y2) {
+    return abs(x1 - x2) + abs(y1 - y2);
+  }
+
+  bool is_there_a_cherry_in_given_column_going_downwards(
+      const size_t x,
+      const size_t y,
+      size_t& found_closest_cherry_x) const {
+    for (size_t i{x}; i < grid_height_; i++) {
+      if (1 == grid_[i][y]) {
+        found_closest_cherry_x = i;
+        return true;
+      }
+
+      if (-1 == grid_[i][y])
+        return false;
+    }
+    return false;
+  }
+
+  bool is_there_a_cherry_in_given_column_going_upwards(
+      const size_t x,
+      const size_t y,
+      size_t& found_closest_cherry_x) const {
+    for (size_t i{}; i <= x; i++) {
+      if (1 == grid_[i][y]) {
+        found_closest_cherry_x = i;
+        return true;
+      }
+
+      if (-1 == grid_[i][y])
+        return false;
+    }
+    return false;
+  }
+
+  bool is_there_a_cherry_in_given_row_going_right(
+      const size_t x,
+      const size_t y,
+      size_t& found_closest_cherry_y) const {
+    for (size_t j{y}; j < grid_width_; j++) {
+      if (1 == grid_[x][j]) {
+        found_closest_cherry_y = j;
+        return true;
+      }
+
+      if (-1 == grid_[x][j])
+        return false;
+    }
+    return false;
+  }
+
+  bool is_there_a_cherry_in_given_row_going_left(
+      const size_t x,
+      const size_t y,
+      size_t& found_closest_cherry_y) const {
+    for (size_t j{}; j <= y; j++) {
+      if (1 == grid_[x][j]) {
+        found_closest_cherry_y = j;
+        return true;
+      }
+
+      if (-1 == grid_[x][j])
+        return false;
+    }
+    return false;
   }
 
   void pick_up_most_cherries_by_travelling_right_and_down(
@@ -72,47 +128,53 @@ class Solution {
       const size_t y,
       size_t& max_cherries_picked_up,
       const size_t currently_picked_up_cherries = 0) {
-    visited_cells_going_right_and_down.emplace_back(x, y, grid_[x][y]);
-
     if (x == grid_width_ - 1 && y == grid_height_ - 1) {
-      for (const Cell& c : visited_cells_going_right_and_down)
-        grid_[c.x][c.y] = 0;
       pick_up_most_cherries_by_travelling_left_and_up(
           grid_height_ - 1, grid_width_ - 1, max_cherries_picked_up,
           currently_picked_up_cherries);
-      for (const Cell& c : visited_cells_going_right_and_down)
-        grid_[c.x][c.y] = c.value;
-
-      visited_cells_going_right_and_down.pop_back();
       return;
     }
 
-    if (x + 1 < grid_width_ && -1 != grid_[x + 1][y]) {
-      const int cell_value{grid_[x + 1][y]};
-      grid_[x + 1][y] ^= grid_[x + 1][y];
-      pick_up_most_cherries_by_travelling_right_and_down(
-          x + 1, y, max_cherries_picked_up,
-          currently_picked_up_cherries + cell_value);
-      grid_[x + 1][y] ^= cell_value;
-    }
+    size_t ii{};
 
-    if (y + 1 < grid_height_ && -1 != grid_[x][y + 1]) {
-      const int cell_value{grid_[x][y + 1]};
-      grid_[x][y + 1] ^= grid_[x][y + 1];
+    if (is_there_a_cherry_in_given_column_going_downwards(x, y, ii)) {
+      grid_[ii][y] = 0;
+      if (ii < grid_height_ - 1)
+        pick_up_most_cherries_by_travelling_right_and_down(
+            ii + 1, y, max_cherries_picked_up,
+            currently_picked_up_cherries + 1);
+      if (y < grid_width_ - 1)
+        pick_up_most_cherries_by_travelling_right_and_down(
+            ii, y + 1, max_cherries_picked_up,
+            currently_picked_up_cherries + 1);
+      grid_[ii][y] = 1;
+    } else if (y < grid_width_ - 1 && -1 != grid_[x][y + 1])
       pick_up_most_cherries_by_travelling_right_and_down(
-          x, y + 1, max_cherries_picked_up,
-          currently_picked_up_cherries + cell_value);
-      grid_[x][y + 1] ^= cell_value;
-    }
+          x, y + 1, max_cherries_picked_up, currently_picked_up_cherries);
 
-    visited_cells_going_right_and_down.pop_back();
+    size_t jj{};
+
+    if (is_there_a_cherry_in_given_row_going_right(x, y, jj)) {
+      grid_[x][jj] = 0;
+      if (jj < grid_width_ - 1)
+        pick_up_most_cherries_by_travelling_right_and_down(
+            x, jj + 1, max_cherries_picked_up,
+            currently_picked_up_cherries + 1);
+      if (x < grid_height_ - 1)
+        pick_up_most_cherries_by_travelling_right_and_down(
+            x + 1, jj, max_cherries_picked_up,
+            currently_picked_up_cherries + 1);
+      grid_[x][jj] = 1;
+    } else if (x < grid_height_ - 1 && -1 != grid_[x + 1][y])
+      pick_up_most_cherries_by_travelling_right_and_down(
+          x + 1, y, max_cherries_picked_up, currently_picked_up_cherries);
   }
 
   void pick_up_most_cherries_by_travelling_left_and_up(
       const size_t x,
       const size_t y,
       size_t& max_cherries_picked_up,
-      const size_t currently_picked_up_cherries = 0) {
+      const size_t currently_picked_up_cherries) {
     if (currently_picked_up_cherries + distance(0, 0, x, y) <=
         max_cherries_picked_up)
       return;
@@ -123,23 +185,39 @@ class Solution {
       return;
     }
 
-    if (y > 0 && -1 != grid_[x][y - 1]) {
-      const int cell_value{grid_[x][y - 1]};
-      grid_[x][y - 1] ^= grid_[x][y - 1];
-      pick_up_most_cherries_by_travelling_left_and_up(
-          x, y - 1, max_cherries_picked_up,
-          currently_picked_up_cherries + cell_value);
-      grid_[x][y - 1] ^= cell_value;
-    }
+    size_t ii{};
 
-    if (x > 0 && -1 != grid_[x - 1][y]) {
-      const int cell_value{grid_[x - 1][y]};
-      grid_[x - 1][y] ^= grid_[x - 1][y];
+    if (is_there_a_cherry_in_given_column_going_upwards(x, y, ii)) {
+      grid_[ii][y] = 0;
+      if (ii > 0)
+        pick_up_most_cherries_by_travelling_left_and_up(
+            ii - 1, y, max_cherries_picked_up,
+            currently_picked_up_cherries + 1);
+      if (y > 0)
+        pick_up_most_cherries_by_travelling_left_and_up(
+            ii, y - 1, max_cherries_picked_up,
+            currently_picked_up_cherries + 1);
+      grid_[ii][y] = 1;
+    } else if (y > 0 && -1 != grid_[x][y - 1])
       pick_up_most_cherries_by_travelling_left_and_up(
-          x - 1, y, max_cherries_picked_up,
-          currently_picked_up_cherries + cell_value);
-      grid_[x - 1][y] ^= cell_value;
-    }
+          x, y - 1, max_cherries_picked_up, currently_picked_up_cherries);
+
+    size_t jj{};
+
+    if (is_there_a_cherry_in_given_row_going_left(x, y, jj)) {
+      grid_[x][jj] = 0;
+      if (jj > 0)
+        pick_up_most_cherries_by_travelling_left_and_up(
+            x, jj - 1, max_cherries_picked_up,
+            currently_picked_up_cherries + 1);
+      if (x > 0)
+        pick_up_most_cherries_by_travelling_left_and_up(
+            x - 1, jj, max_cherries_picked_up,
+            currently_picked_up_cherries + 1);
+      grid_[x][jj] = 1;
+    } else if (x > 0 && -1 != grid_[x - 1][y])
+      pick_up_most_cherries_by_travelling_left_and_up(
+          x - 1, y, max_cherries_picked_up, currently_picked_up_cherries);
   }
 
  public:
@@ -147,8 +225,14 @@ class Solution {
     grid_ = move(grid);
     grid_height_ = grid_.size();
     grid_width_ = grid_[0].size();
-    visited_cells_going_right_and_down.clear();
-    visited_cells_going_right_and_down.reserve(grid_height_ + grid_width_);
+
+    max_cherry_count_ = 0;
+    for (size_t x{}; x < grid_height_; x++) {
+      for (size_t y{}; y < grid_width_; y++) {
+        if (1 == grid_[x][y])
+          max_cherry_count_++;
+      }
+    }
 
     if (1 == grid_height_) {
       if (any_of(begin(grid_[0]), end(grid_[0]),
@@ -159,9 +243,10 @@ class Solution {
     }
 
     size_t max_cherries_picked_up{};
+    const int start_cherry_count{grid_[0][0]};
+    grid_[0][0] = 0;
     pick_up_most_cherries_by_travelling_right_and_down(
-        0, 0, max_cherries_picked_up, grid_[0][0]);
-
+        0, 0, max_cherries_picked_up, start_cherry_count);
     return max_cherries_picked_up;
   }
 };
