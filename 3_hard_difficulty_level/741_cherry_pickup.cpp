@@ -40,8 +40,8 @@ It is guaranteed that grid[0][0] and grid[N-1][N-1] are not -1.
 
 #include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <iostream>
+#include <unordered_set>
 #include <vector>
 
 using namespace std;
@@ -50,76 +50,43 @@ class Solution {
   vector<vector<int>> grid_;
   size_t grid_width_{};
   size_t grid_height_{};
+  int start_cell_value_{};
+  int end_cell_value_{};
 
-  static inline int distance(const int x1,
-                             const int y1,
-                             const int x2,
-                             const int y2) {
-    return abs(x1 - x2) + abs(y1 - y2);
-  }
-
-  bool is_there_a_cherry_in_given_column_going_downwards(
+  void find_closest_neighbors_going_right_and_downwards(
       const size_t x,
       const size_t y,
-      size_t& found_closest_cherry_x) const {
-    for (size_t i{x}; i < grid_height_; i++) {
-      if (-1 == grid_[i][y])
-        return false;
-
-      if (1 == grid_[i][y]) {
-        found_closest_cherry_x = i;
-        return true;
-      }
+      vector<pair<size_t, size_t>>& next_cherry_positions) {
+    if ((1 == grid_[x][y]) || (grid_height_ - 1 == x && grid_width_ - 1 == y)) {
+      next_cherry_positions.emplace_back(x, y);
+      grid_[x][y] = 2;
+      return;
     }
-    return false;
+
+    if (x < grid_height_ - 1 && (0 == grid_[x + 1][y] || 1 == grid_[x + 1][y]))
+      find_closest_neighbors_going_right_and_downwards(x + 1, y,
+                                                       next_cherry_positions);
+    if (y < grid_width_ - 1 && (0 == grid_[x][y + 1] || 1 == grid_[x][y + 1]))
+      find_closest_neighbors_going_right_and_downwards(x, y + 1,
+                                                       next_cherry_positions);
   }
 
-  bool is_there_a_cherry_in_given_column_going_upwards(
-      const int x,
-      const int y,
-      size_t& found_closest_cherry_x) const {
-    for (int i{x}; i >= 0; i--) {
-      if (-1 == grid_[i][y])
-        return false;
-
-      if (1 == grid_[i][y]) {
-        found_closest_cherry_x = i;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  bool is_there_a_cherry_in_given_row_going_right(
+  void find_closest_neighbors_going_left_and_upwards(
       const size_t x,
       const size_t y,
-      size_t& found_closest_cherry_y) const {
-    for (size_t j{y}; j < grid_width_; j++) {
-      if (-1 == grid_[x][j])
-        return false;
-
-      if (1 == grid_[x][j]) {
-        found_closest_cherry_y = j;
-        return true;
-      }
+      vector<pair<size_t, size_t>>& next_cherry_positions) {
+    if ((1 == grid_[x][y]) || (!x && !y)) {
+      next_cherry_positions.emplace_back(x, y);
+      grid_[x][y] = 2;
+      return;
     }
-    return false;
-  }
 
-  bool is_there_a_cherry_in_given_row_going_left(
-      const int x,
-      const int y,
-      size_t& found_closest_cherry_y) const {
-    for (int j{y}; j >= 0; j--) {
-      if (-1 == grid_[x][j])
-        return false;
-
-      if (1 == grid_[x][j]) {
-        found_closest_cherry_y = j;
-        return true;
-      }
-    }
-    return false;
+    if (x > 0 && (0 == grid_[x - 1][y] || 1 == grid_[x - 1][y]))
+      find_closest_neighbors_going_left_and_upwards(x - 1, y,
+                                                    next_cherry_positions);
+    if (y > 0 && (0 == grid_[x][y - 1] || 1 == grid_[x][y - 1]))
+      find_closest_neighbors_going_left_and_upwards(x, y - 1,
+                                                    next_cherry_positions);
   }
 
   void pick_up_most_cherries_by_travelling_right_and_down(
@@ -134,30 +101,24 @@ class Solution {
       return;
     }
 
-    size_t ii{string::npos}, jj{string::npos};
+    vector<pair<size_t, size_t>> next_cherry_positions{};
+    next_cherry_positions.reserve(grid_height_ - x + grid_width_ - y);
 
-    if (is_there_a_cherry_in_given_column_going_downwards(x, y, ii)) {
-      grid_[ii][y] = 0;
+    find_closest_neighbors_going_right_and_downwards(x, y,
+                                                     next_cherry_positions);
+    for (const pair<size_t, size_t>& cherry : next_cherry_positions)
+      grid_[cherry.first][cherry.second] = 1;
+
+    for (const pair<size_t, size_t>& cherry : next_cherry_positions) {
+      const int cell_value{grid_height_ - 1 == cherry.first &&
+                                   grid_width_ - 1 == cherry.second
+                               ? end_cell_value_
+                               : 1};
+      grid_[cherry.first][cherry.second] = 0;
       pick_up_most_cherries_by_travelling_right_and_down(
-          ii, y, max_cherries_picked_up, currently_picked_up_cherries + 1);
-      grid_[ii][y] = 1;
-    }
-
-    if (is_there_a_cherry_in_given_row_going_right(x, y, jj)) {
-      grid_[x][jj] = 0;
-      pick_up_most_cherries_by_travelling_right_and_down(
-          x, jj, max_cherries_picked_up, currently_picked_up_cherries + 1);
-      grid_[x][jj] = 1;
-    }
-
-    if (string::npos == ii && string::npos == jj) {
-      if (y < grid_width_ - 1 && -1 != grid_[x][y + 1])
-        pick_up_most_cherries_by_travelling_right_and_down(
-            x, y + 1, max_cherries_picked_up, currently_picked_up_cherries);
-
-      if (x < grid_height_ - 1 && -1 != grid_[x + 1][y])
-        pick_up_most_cherries_by_travelling_right_and_down(
-            x + 1, y, max_cherries_picked_up, currently_picked_up_cherries);
+          cherry.first, cherry.second, max_cherries_picked_up,
+          currently_picked_up_cherries + cell_value);
+      grid_[cherry.first][cherry.second] = cell_value;
     }
   }
 
@@ -166,8 +127,7 @@ class Solution {
       const size_t y,
       size_t& max_cherries_picked_up,
       const size_t currently_picked_up_cherries) {
-    if (currently_picked_up_cherries + distance(0, 0, x, y) <=
-        max_cherries_picked_up)
+    if (currently_picked_up_cherries + x + y <= max_cherries_picked_up)
       return;
 
     if (x == 0 && y == 0) {
@@ -176,30 +136,20 @@ class Solution {
       return;
     }
 
-    size_t ii{string::npos}, jj{string::npos};
+    vector<pair<size_t, size_t>> next_cherry_positions{};
+    next_cherry_positions.reserve(x + y);
 
-    if (is_there_a_cherry_in_given_column_going_upwards(x, y, ii)) {
-      grid_[ii][y] = 0;
+    find_closest_neighbors_going_left_and_upwards(x, y, next_cherry_positions);
+    for (const pair<size_t, size_t>& cherry : next_cherry_positions)
+      grid_[cherry.first][cherry.second] = 1;
+
+    for (const pair<size_t, size_t>& cherry : next_cherry_positions) {
+      const int cell_value{0 == cherry.first && 0 == cherry.second ? 0 : 1};
+      grid_[cherry.first][cherry.second] = 0;
       pick_up_most_cherries_by_travelling_left_and_up(
-          ii, y, max_cherries_picked_up, currently_picked_up_cherries + 1);
-      grid_[ii][y] = 1;
-    }
-
-    if (is_there_a_cherry_in_given_row_going_left(x, y, jj)) {
-      grid_[x][jj] = 0;
-      pick_up_most_cherries_by_travelling_left_and_up(
-          x, jj, max_cherries_picked_up, currently_picked_up_cherries + 1);
-      grid_[x][jj] = 1;
-    }
-
-    if (string::npos == ii && string::npos == jj) {
-      if (y > 0 && -1 != grid_[x][y - 1])
-        pick_up_most_cherries_by_travelling_left_and_up(
-            x, y - 1, max_cherries_picked_up, currently_picked_up_cherries);
-
-      if (x > 0 && -1 != grid_[x - 1][y])
-        pick_up_most_cherries_by_travelling_left_and_up(
-            x - 1, y, max_cherries_picked_up, currently_picked_up_cherries);
+          cherry.first, cherry.second, max_cherries_picked_up,
+          currently_picked_up_cherries + cell_value);
+      grid_[cherry.first][cherry.second] = cell_value;
     }
   }
 
@@ -218,10 +168,11 @@ class Solution {
     }
 
     size_t max_cherries_picked_up{};
-    const int start_cherry_count{grid_[0][0]};
+    start_cell_value_ = grid_[0][0];
+    end_cell_value_ = grid_[grid_height_ - 1][grid_width_ - 1];
     grid_[0][0] = 0;
     pick_up_most_cherries_by_travelling_right_and_down(
-        0, 0, max_cherries_picked_up, start_cherry_count);
+        0, 0, max_cherries_picked_up, start_cell_value_);
     return max_cherries_picked_up;
   }
 
@@ -255,6 +206,7 @@ int main() {
                              {0, 0, 0, 1, 0, 0, 1}, {1, 0, 0, 1, 0, 0, 0},
                              {0, 0, 0, 1, 0, 0, 0}, {0, 0, 0, 1, 0, 0, 0},
                              {0, 0, 0, 1, 1, 1, 1}};
+
   cout << "s.cherryPickup([[1,1,1,1,0,0,0],[0,0,0,1,0,0,0],[0,0,0,1,0,0,1],"
           "[1,"
           "0,0,1,0,0,0],[0,0,0,1,0,0,0],[0,0,0,1,0,0,0],[0,0,0,1,1,1,1]]) "
@@ -284,7 +236,7 @@ int main() {
           "1,1,1,1,0,1,1,1],[1,1,0,1,1,1,0,-1,1,1],[0,0,0,0,1,-1,0,0,1,-1],[1,"
           "0,1,1,1,0,0,-1,1,0],[1,1,0,1,0,0,1,0,1,-1],[1,-1,0,1,0,0,0,1,-1,1],["
           "1,0,-1,0,-1,0,0,1,0,0],[0,0,-1,0,1,0,1,0,0,1]]) -> "
-       << s.cherryPickup(input7) << '\n';  // expected output: 21
+       << s.cherryPickup(input7) << '\n';  // expected output: 22
 
   cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
