@@ -27,19 +27,16 @@ class Solution {
   string s_;
   size_t s_len_{};
 
-  void find_minimum_number_of_cuts(
-      const size_t start,     
-      const size_t index,
-      size_t& minimum_cuts,
-      const size_t current_number_of_cuts = 0) const {
+  void find_minimum_number_of_cuts(const size_t start,
+                                   const size_t index,
+                                   size_t& minimum_cuts,
+                                   const size_t current_number_of_cuts = 0) {
     if (current_number_of_cuts >= minimum_cuts)
       return;
 
+    size_t last_index{index}, last_pos{char_positions_[s_[start]][index] + 1};
 
-  size_t last_index{index}, last_pos{char_positions_[s_[start]][index] + 1};
-
-  while (last_pos > start) {
-
+    while (true) {
       if (is_palindromic_substr(start, last_pos)) {
         if (last_pos == s_len_) {
           if (current_number_of_cuts < minimum_cuts)
@@ -47,16 +44,20 @@ class Solution {
           return;
         }
 
-        find_minimum_number_of_cuts(last_pos, char_positions_[s_[last_pos]].size() - 1, minimum_cuts, current_number_of_cuts + 1);
-      } else {
-      	if (!last_index) break;
-      	--last_index;
-      	last_pos = char_positions_[s_[start]][last_index] + 1;
+        find_minimum_number_of_cuts(last_pos,
+                                    char_positions_[s_[last_pos]].size() - 1,
+                                    minimum_cuts, current_number_of_cuts + 1);
       }
+
+      if (!last_index)
+        return;
+      --last_index;
+      last_pos = char_positions_[s_[start]][last_index] + 1;
     }
   }
 
-  inline bool is_palindromic_substr(const size_t start, const size_t last) const {
+  inline bool is_palindromic_substr(const size_t start,
+                                    const size_t last) const {
     if (start == last)
       return true;
     for (size_t i{start}, j{last - 1}; i < j; i++, j--) {
@@ -78,10 +79,12 @@ class Solution {
 
     char_positions_.clear();
 
-    for (size_t i{}; i < s_len_; ++i) char_positions_[s_[i]].emplace_back(i);
+    for (size_t i{}; i < s_len_; ++i)
+      char_positions_[s_[i]].emplace_back(i);
 
     size_t minimum_cuts{string::npos};
-    find_minimum_number_of_cuts(0, char_positions_[s_[0]].size() - 1, minimum_cuts, 0);
+    find_minimum_number_of_cuts(0, char_positions_[s_[0]].size() - 1,
+                                minimum_cuts, 0);
     return minimum_cuts;
   }
 
@@ -108,26 +111,6 @@ int main() {
        << '\n';  // expected output: 0
   cout << "s.minCut(\"abacabacrotor\") -> " << s.minCut(string{"abacabacrotor"})
        << '\n';  // expected output: 2
-
-  // cout << "s.minCut("
-  //         "\"apjesgpsxoeiokmqmfgvjslcjukbqxpsobyhjpbgdfruqdkeiszrlmtwgfxyfostpq"
-  //         "czidfljwfbbrflkgdvtytbgqalguewnhvvmcgxboycffopmtmhtfizxkmeftcucxpobx"
-  //         "melmjtuzigsxnncxpaibgpuijwhankxbplpyejxmrrjgeoevqozwdtgospohznkoyzoc"
-  //         "jlracchjqnggbfeebmuvbicbvmpuleywrpzwsihivnrwtxcukwplgtobhgxukwrdlszf"
-  //         "aiqxwjvrgxnsveedxseeyeykarqnjrtlaliyudpacctzizcftjlunlgnfwcqqxcqikoc"
-  //         "qffsjyurzwysfjmswvhbrmshjuzsgpwyubtfbnwajuvrfhlccvfwhxfqthkcwhatktym"
-  //         "gxostjlztwdxritygbrbibdgkezvzajizxasjnrcjwzdfvdnwwqeyumkamhzoqhnqjfz"
-  //         "wzbixclcxqrtniznemxeahfozp\") -> "
-  //      << s.minCut(string{
-  //             "apjesgpsxoeiokmqmfgvjslcjukbqxpsobyhjpbgdfruqdkeiszrlmtwgfxyfost"
-  //             "pqczidfljwfbbrflkgdvtytbgqalguewnhvvmcgxboycffopmtmhtfizxkmeftcu"
-  //             "cxpobxmelmjtuzigsxnncxpaibgpuijwhankxbplpyejxmrrjgeoevqozwdtgosp"
-  //             "ohznkoyzocjlracchjqnggbfeebmuvbicbvmpuleywrpzwsihivnrwtxcukwplgt"
-  //             "obhgxukwrdlszfaiqxwjvrgxnsveedxseeyeykarqnjrtlaliyudpacctzizcftj"
-  //             "lunlgnfwcqqxcqikocqffsjyurzwysfjmswvhbrmshjuzsgpwyubtfbnwajuvrfh"
-  //             "lccvfwhxfqthkcwhatktymgxostjlztwdxritygbrbibdgkezvzajizxasjnrcjw"
-  //             "zdfvdnwwqeyumkamhzoqhnqjfzwzbixclcxqrtniznemxeahfozp"})
-  //      << '\n';
 
   cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
