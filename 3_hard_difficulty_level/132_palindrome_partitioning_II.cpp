@@ -16,14 +16,17 @@ cut.
 
 #include <chrono>
 #include <iostream>
+#include <set>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 using namespace std;
 
 class Solution {
   unordered_map<char, vector<size_t>> char_positions_;
+  unordered_set<string> ignored_substrings_;
   string s_;
   size_t s_len_{};
 
@@ -35,34 +38,55 @@ class Solution {
       return;
 
     size_t last_index{index}, last_pos{char_positions_[s_[start]][index] + 1};
+    size_t index_of_first_differing_chars{start + 1};
 
     while (true) {
-      if (is_palindromic_substr(start, last_pos)) {
-        if (last_pos == s_len_) {
-          if (current_number_of_cuts < minimum_cuts)
-            minimum_cuts = current_number_of_cuts;
-          return;
-        }
+      const string palindromic_substr{s_.substr(start, last_pos - start)};
+      if (ignored_substrings_.find(palindromic_substr) ==
+          end(ignored_substrings_)) {
+        if (last_pos - start < 2 ||
+            is_palindromic_substr(start, last_pos,
+                                  index_of_first_differing_chars)) {
+          if (last_pos == s_len_) {
+            if (current_number_of_cuts < minimum_cuts)
+              minimum_cuts = current_number_of_cuts;
+            return;
+          }
 
-        find_minimum_number_of_cuts(last_pos,
-                                    char_positions_[s_[last_pos]].size() - 1,
-                                    minimum_cuts, current_number_of_cuts + 1);
+          find_minimum_number_of_cuts(last_pos,
+                                      char_positions_[s_[last_pos]].size() - 1,
+                                      minimum_cuts, current_number_of_cuts + 1);
+        } else
+          ignored_substrings_.emplace(palindromic_substr);
       }
 
-      if (!last_index)
+      if (!last_index) {
+        ignored_substrings_.emplace(
+            s_.substr(start, index_of_first_differing_chars - start + 1));
         return;
+      }
       --last_index;
       last_pos = char_positions_[s_[start]][last_index] + 1;
+      if (last_pos <= start)
+        return;
+      if (last_pos - start == 1)
+        ignored_substrings_.emplace(
+            s_.substr(start, index_of_first_differing_chars - start + 1));
     }
   }
 
-  inline bool is_palindromic_substr(const size_t start,
-                                    const size_t last) const {
-    if (start == last)
-      return true;
-    for (size_t i{start}, j{last - 1}; i < j; i++, j--) {
-      if (s_[i] != s_[j])
+  bool is_palindromic_substr(const size_t start,
+                             const size_t last,
+                             size_t& index_of_first_differing_chars) {
+    if (s_[start] != s_[last - 1])
+      return false;
+
+    for (size_t i{start + 1}, j{last - 2}; i < j; i++, j--) {
+      if (s_[i] != s_[j]) {
+        if (i > index_of_first_differing_chars)
+          index_of_first_differing_chars = i;
         return false;
+      }
     }
 
     return true;
@@ -81,6 +105,8 @@ class Solution {
 
     for (size_t i{}; i < s_len_; ++i)
       char_positions_[s_[i]].emplace_back(i);
+
+    ignored_substrings_.clear();
 
     size_t minimum_cuts{string::npos};
     find_minimum_number_of_cuts(0, char_positions_[s_[0]].size() - 1,
@@ -109,8 +135,28 @@ int main() {
 
   cout << "s.minCut(\"fff\") -> " << s.minCut(string{"fff"})
        << '\n';  // expected output: 0
-  cout << "s.minCut(\"abacabacrotor\") -> " << s.minCut(string{"abacabacrotor"})
-       << '\n';  // expected output: 2
+  cout << "s.minCut(\"abxacabzacrotor\") -> "
+       << s.minCut(string{"abxacabzacrotor"}) << '\n';  // expected output: 9
+
+  // cout << "s.minCut("
+  //         "\"apjesgpsxoeiokmqmfgvjslcjukbqxpsobyhjpbgdfruqdkeiszrlmtwgfxyfostpq"
+  //         "czidfljwfbbrflkgdvtytbgqalguewnhvvmcgxboycffopmtmhtfizxkmeftcucxpobx"
+  //         "melmjtuzigsxnncxpaibgpuijwhankxbplpyejxmrrjgeoevqozwdtgospohznkoyzoc"
+  //         "jlracchjqnggbfeebmuvbicbvmpuleywrpzwsihivnrwtxcukwplgtobhgxukwrdlszf"
+  //         "aiqxwjvrgxnsveedxseeyeykarqnjrtlaliyudpacctzizcftjlunlgnfwcqqxcqikoc"
+  //         "qffsjyurzwysfjmswvhbrmshjuzsgpwyubtfbnwajuvrfhlccvfwhxfqthkcwhatktym"
+  //         "gxostjlztwdxritygbrbibdgkezvzajizxasjnrcjwzdfvdnwwqeyumkamhzoqhnqjfz"
+  //         "wzbixclcxqrtniznemxeahfozp\") -> "
+  //      << s.minCut(string{
+  //             "apjesgpsxoeiokmqmfgvjslcjukbqxpsobyhjpbgdfruqdkeiszrlmtwgfxyfost"
+  //             "pqczidfljwfbbrflkgdvtytbgqalguewnhvvmcgxboycffopmtmhtfizxkmeftcu"
+  //             "cxpobxmelmjtuzigsxnncxpaibgpuijwhankxbplpyejxmrrjgeoevqozwdtgosp"
+  //             "ohznkoyzocjlracchjqnggbfeebmuvbicbvmpuleywrpzwsihivnrwtxcukwplgt"
+  //             "obhgxukwrdlszfaiqxwjvrgxnsveedxseeyeykarqnjrtlaliyudpacctzizcftj"
+  //             "lunlgnfwcqqxcqikocqffsjyurzwysfjmswvhbrmshjuzsgpwyubtfbnwajuvrfh"
+  //             "lccvfwhxfqthkcwhatktymgxostjlztwdxritygbrbibdgkezvzajizxasjnrcjw"
+  //             "zdfvdnwwqeyumkamhzoqhnqjfzwzbixclcxqrtniznemxeahfozp"})
+  //      << '\n';
 
   cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
