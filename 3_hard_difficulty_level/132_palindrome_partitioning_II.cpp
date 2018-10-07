@@ -16,8 +16,8 @@ cut.
 
 #include <chrono>
 #include <iostream>
-#include <set>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -26,7 +26,7 @@ using namespace std;
 
 class Solution {
   unordered_map<char, vector<size_t>> char_positions_;
-  unordered_set<string> ignored_substrings_;
+  unordered_set<string_view> ignored_substrings_;
   string s_;
   size_t s_len_{};
 
@@ -34,14 +34,14 @@ class Solution {
                                    const size_t index,
                                    size_t& minimum_cuts,
                                    const size_t current_number_of_cuts = 0) {
-    if (current_number_of_cuts >= minimum_cuts)
+    if (current_number_of_cuts + s_len_ - start >= minimum_cuts)
       return;
 
     size_t last_index{index}, last_pos{char_positions_[s_[start]][index] + 1};
     size_t index_of_first_differing_chars{start + 1};
 
     while (true) {
-      const string palindromic_substr{s_.substr(start, last_pos - start)};
+      const string_view palindromic_substr{&s_[start], last_pos - start};
       if (ignored_substrings_.find(palindromic_substr) ==
           end(ignored_substrings_)) {
         if (last_pos - start < 2 ||
@@ -53,34 +53,33 @@ class Solution {
             return;
           }
 
-          find_minimum_number_of_cuts(last_pos,
-                                      char_positions_[s_[last_pos]].size() - 1,
-                                      minimum_cuts, current_number_of_cuts + 1);
+          if (current_number_of_cuts + 1 < minimum_cuts)
+            find_minimum_number_of_cuts(
+                last_pos, char_positions_[s_[last_pos]].size() - 1,
+                minimum_cuts, current_number_of_cuts + 1);
         } else
           ignored_substrings_.emplace(palindromic_substr);
       }
 
       if (!last_index) {
-        ignored_substrings_.emplace(
-            s_.substr(start, index_of_first_differing_chars - start + 1));
+        ignored_substrings_.emplace(&s_[start],
+                                    index_of_first_differing_chars - start + 1);
         return;
       }
+
       --last_index;
       last_pos = char_positions_[s_[start]][last_index] + 1;
       if (last_pos <= start)
         return;
       if (last_pos - start == 1)
-        ignored_substrings_.emplace(
-            s_.substr(start, index_of_first_differing_chars - start + 1));
+        ignored_substrings_.emplace(&s_[start],
+                                    index_of_first_differing_chars - start + 1);
     }
   }
 
-  bool is_palindromic_substr(const size_t start,
-                             const size_t last,
-                             size_t& index_of_first_differing_chars) {
-    if (s_[start] != s_[last - 1])
-      return false;
-
+  inline bool is_palindromic_substr(const size_t start,
+                                    const size_t last,
+                                    size_t& index_of_first_differing_chars) {
     for (size_t i{start + 1}, j{last - 2}; i < j; i++, j--) {
       if (s_[i] != s_[j]) {
         if (i > index_of_first_differing_chars)
@@ -138,25 +137,39 @@ int main() {
   cout << "s.minCut(\"abxacabzacrotor\") -> "
        << s.minCut(string{"abxacabzacrotor"}) << '\n';  // expected output: 9
 
-  // cout << "s.minCut("
-  //         "\"apjesgpsxoeiokmqmfgvjslcjukbqxpsobyhjpbgdfruqdkeiszrlmtwgfxyfostpq"
-  //         "czidfljwfbbrflkgdvtytbgqalguewnhvvmcgxboycffopmtmhtfizxkmeftcucxpobx"
-  //         "melmjtuzigsxnncxpaibgpuijwhankxbplpyejxmrrjgeoevqozwdtgospohznkoyzoc"
-  //         "jlracchjqnggbfeebmuvbicbvmpuleywrpzwsihivnrwtxcukwplgtobhgxukwrdlszf"
-  //         "aiqxwjvrgxnsveedxseeyeykarqnjrtlaliyudpacctzizcftjlunlgnfwcqqxcqikoc"
-  //         "qffsjyurzwysfjmswvhbrmshjuzsgpwyubtfbnwajuvrfhlccvfwhxfqthkcwhatktym"
-  //         "gxostjlztwdxritygbrbibdgkezvzajizxasjnrcjwzdfvdnwwqeyumkamhzoqhnqjfz"
-  //         "wzbixclcxqrtniznemxeahfozp\") -> "
-  //      << s.minCut(string{
-  //             "apjesgpsxoeiokmqmfgvjslcjukbqxpsobyhjpbgdfruqdkeiszrlmtwgfxyfost"
-  //             "pqczidfljwfbbrflkgdvtytbgqalguewnhvvmcgxboycffopmtmhtfizxkmeftcu"
-  //             "cxpobxmelmjtuzigsxnncxpaibgpuijwhankxbplpyejxmrrjgeoevqozwdtgosp"
-  //             "ohznkoyzocjlracchjqnggbfeebmuvbicbvmpuleywrpzwsihivnrwtxcukwplgt"
-  //             "obhgxukwrdlszfaiqxwjvrgxnsveedxseeyeykarqnjrtlaliyudpacctzizcftj"
-  //             "lunlgnfwcqqxcqikocqffsjyurzwysfjmswvhbrmshjuzsgpwyubtfbnwajuvrfh"
-  //             "lccvfwhxfqthkcwhatktymgxostjlztwdxritygbrbibdgkezvzajizxasjnrcjw"
-  //             "zdfvdnwwqeyumkamhzoqhnqjfzwzbixclcxqrtniznemxeahfozp"})
-  //      << '\n';
+  cout << "s.minCut("
+          "\"apjesgpsxoeiokmqmfgvjslcjukbqxpsobyhjpbgdfruqdkeiszrlmtwgfxyfost"
+          "pq"
+          "czidfljwfbbrflkgdvtytbgqalguewnhvvmcgxboycffopmtmhtfizxkmeftcucxpo"
+          "bx"
+          "melmjtuzigsxnncxpaibgpuijwhankxbplpyejxmrrjgeoevqozwdtgospohznkoyz"
+          "oc"
+          "jlracchjqnggbfeebmuvbicbvmpuleywrpzwsihivnrwtxcukwplgtobhgxukwrdls"
+          "zf"
+          "aiqxwjvrgxnsveedxseeyeykarqnjrtlaliyudpacctzizcftjlunlgnfwcqqxcqik"
+          "oc"
+          "qffsjyurzwysfjmswvhbrmshjuzsgpwyubtfbnwajuvrfhlccvfwhxfqthkcwhatkt"
+          "ym"
+          "gxostjlztwdxritygbrbibdgkezvzajizxasjnrcjwzdfvdnwwqeyumkamhzoqhnqj"
+          "fz"
+          "wzbixclcxqrtniznemxeahfozp\") -> "
+       << s.minCut(
+              string{"apjesgpsxoeiokmqmfgvjslcjukbqxpsobyhjpbgdfruqdkeiszrlmt"
+                     "wgfxyfost"
+                     "pqczidfljwfbbrflkgdvtytbgqalguewnhvvmcgxboycffopmtmhtfi"
+                     "zxkmeftcu"
+                     "cxpobxmelmjtuzigsxnncxpaibgpuijwhankxbplpyejxmrrjgeoevq"
+                     "ozwdtgosp"
+                     "ohznkoyzocjlracchjqnggbfeebmuvbicbvmpuleywrpzwsihivnrwt"
+                     "xcukwplgt"
+                     "obhgxukwrdlszfaiqxwjvrgxnsveedxseeyeykarqnjrtlaliyudpac"
+                     "ctzizcftj"
+                     "lunlgnfwcqqxcqikocqffsjyurzwysfjmswvhbrmshjuzsgpwyubtfb"
+                     "nwajuvrfh"
+                     "lccvfwhxfqthkcwhatktymgxostjlztwdxritygbrbibdgkezvzajiz"
+                     "xasjnrcjw"
+                     "zdfvdnwwqeyumkamhzoqhnqjfzwzbixclcxqrtniznemxeahfozp"})
+       << '\n';
 
   cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
