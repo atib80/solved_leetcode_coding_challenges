@@ -25,7 +25,7 @@ cut.
 
 using namespace std;
 
-const size_t max_string_length{string::npos};
+static constexpr size_t max_string_length{string::npos};
 
 template <typename CharacterPointerType,
           typename CheckConditionTypeParam = enable_if<
@@ -174,7 +174,10 @@ class Solution {
         visited_palindromic_intervals_);
     find_minimum_number_of_cuts(
         first_palindromic_interval, end(palindromic_substring_intervals_),
-        minimum_cuts, first_palindromic_interval->first);
+        minimum_cuts,
+        first_palindromic_interval
+            ->first);  // {[3, 5], [10, 14]} ->
+                       // first_palindromic_interval->first = 3
     return minimum_cuts;
   }
 
@@ -192,8 +195,8 @@ class Solution {
 int main() {
   Solution s{};
 
-  // const char* src{"apple pie"};
-  // cout << str_length(src) << '\n';
+  const char* src{"I enjoy eating apple pie."};
+  cout << str_length(src) << '\n';
 
   Solution::start_stop_timer(true);
 
@@ -237,7 +240,7 @@ int main() {
                      "lccvfwhxfqthkcwhatktymgxostjlztwdxritygbrbibdgkezvzajiz"
                      "xasjnrcjw"
                      "zdfvdnwwqeyumkamhzoqhnqjfzwzbixclcxqrtniznemxeahfozp"})
-       << '\n';
+       << '\n';  // expected output: 452
 
   cout << "s.minCut(\"abazcabacxy\") -> " << s.minCut(string{"abazcabacxy"})
        << '\n';  // expected output: 4
