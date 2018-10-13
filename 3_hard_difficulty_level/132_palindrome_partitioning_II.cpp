@@ -19,6 +19,7 @@ cut.
 #include <iostream>
 #include <map>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -29,133 +30,47 @@ struct palindromic_interval {
   size_t start;
   size_t last;
   size_t number_of_cuts;
-  bool is_fixed_interval;
 
   palindromic_interval(const size_t start,
                        const size_t last,
-                       const size_t number_of_cuts,
-                       const bool is_fixed_interval = false)
-      : start{start},
-        last{last},
-        number_of_cuts{number_of_cuts},
-        is_fixed_interval{is_fixed_interval} {}
+                       const size_t number_of_cuts)
+      : start{start}, last{last}, number_of_cuts{number_of_cuts} {}
 };
 
 static size_t s_len;
 
-namespace std {
+// namespace std {
 template <>
 struct hash<pair<size_t, size_t>> {
   size_t operator()(const pair<size_t, size_t>& p) const noexcept {
     return p.first * s_len + p.second;
   }
 };
-}  // namespace std
+// }  // namespace std
 
 class Solution {
   unordered_map<char, vector<size_t>> char_positions_;
   multimap<size_t, size_t> palindromic_substring_intervals_;
-  unordered_map<pair<size_t, size_t>, int>
-      is_palindromic_substring_interval_overlapped_;
   unordered_map<pair<size_t, size_t>, size_t>
       min_number_of_registered_cuts_at_nodes_;
-  vector<palindromic_interval> palindromic_intervals_;
-  // vector<pair<size_t, size_t>> overlapping_palindromic_intervals_;
   vector<palindromic_interval>
       currently_visited_palindromic_substring_intervals_;
-  vector<pair<size_t, size_t>> covered_palindromic_intervals_;
-  vector<int> visited_palindromic_intervals_;
   string s_;
   size_t s_len_{};
 
-  bool
-  check_if_currently_selected_palindromic_interval_overlaps_previously_selected_palindromic_intervals(
-      const size_t index) {
-    for (size_t i{}; i < covered_palindromic_intervals_.size(); ++i) {
-      if (!(palindromic_intervals_[index].last <
-                covered_palindromic_intervals_[i].first ||
-            palindromic_intervals_[index].start >
-                covered_palindromic_intervals_[i].second))
-        return true;
-    }
-
-    return false;
-  }
-
-  bool find_overshadowed_shorter_palindromic_intervals(
-      const palindromic_interval& pi,
-      vector<pair<size_t, size_t>>& remove_palindromic_intervals) {
-    bool is_found_overshadowed_palindromic_intervals{};
-
-    for (const auto& p : palindromic_substring_intervals_) {
-      if (p.first == pi.start && p.second == pi.last)
-        continue;
-
-      if ((p.first < pi.start && p.second >= pi.start && p.second <= pi.last) ||
-          (p.first >= pi.start && p.first <= pi.last && p.second > pi.last))
-        return false;
-
-      if (pi.start <= p.first && pi.last >= p.second) {
-        remove_palindromic_intervals.emplace_back(p.first, p.second);
-        is_found_overshadowed_palindromic_intervals = true;
-      }
-    }
-
-    is_palindromic_substring_interval_overlapped_[make_pair(pi.start,
-                                                            pi.last)] = 0;
-    return is_found_overshadowed_palindromic_intervals;
-  }
-
   void find_all_palindromic_substring_intervals() {
     palindromic_substring_intervals_.clear();
-    is_palindromic_substring_interval_overlapped_.clear();
     min_number_of_registered_cuts_at_nodes_.clear();
-    palindromic_intervals_.clear();
 
     for (const auto& char_indices : char_positions_) {
       const vector<size_t>& char_offsets{char_indices.second};
 
       for (size_t i{}; i < char_offsets.size() - 1; ++i)
-        for (size_t j{i + 1}; j < char_offsets.size(); ++j)
-          if (is_palindromic_substr(char_offsets[i], char_offsets[j] + 1)) {
+        for (size_t j{i + 1}; j < char_offsets.size(); ++j) {
+          if (is_palindromic_substr(char_offsets[i], char_offsets[j] + 1))
             palindromic_substring_intervals_.emplace(char_offsets[i],
                                                      char_offsets[j]);
-            is_palindromic_substring_interval_overlapped_[make_pair(
-                char_offsets[i], char_offsets[j])] = 1;
-            palindromic_intervals_.emplace_back(char_offsets[i],
-                                                char_offsets[j], false);
-          }
-    }
-
-    sort(begin(palindromic_intervals_), end(palindromic_intervals_),
-         [](const palindromic_interval& lhs, const palindromic_interval& rhs) {
-           return lhs.last - lhs.start > rhs.last - rhs.start;
-         });
-
-    for (const auto& pi : palindromic_intervals_) {
-      if (is_palindromic_substring_interval_overlapped_.find(
-              make_pair(pi.start, pi.last)) ==
-          end(is_palindromic_substring_interval_overlapped_))
-        continue;
-      vector<pair<size_t, size_t>> remove_palindromic_intervals{};
-
-      if (find_overshadowed_shorter_palindromic_intervals(
-              pi, remove_palindromic_intervals)) {
-        for (const pair<size_t, size_t>& rpi : remove_palindromic_intervals) {
-          for (auto current{
-                   palindromic_substring_intervals_.lower_bound(rpi.first)};
-               current !=
-               palindromic_substring_intervals_.upper_bound(rpi.first);
-               ++current) {
-            if (rpi.second == current->second) {
-              palindromic_substring_intervals_.erase(current);
-              is_palindromic_substring_interval_overlapped_.erase(
-                  make_pair(rpi.first, rpi.second));
-              break;
-            }
-          }
         }
-      }
     }
 
     currently_visited_palindromic_substring_intervals_.clear();
@@ -165,88 +80,73 @@ class Solution {
 
   void update_currently_calculated_minimum_number_of_cuts_at_visited_nodes() {
     for (const palindromic_interval& pi :
-         currently_visited_palindromic_substring_intervals_)
+         currently_visited_palindromic_substring_intervals_) {
+      const auto found_iter{min_number_of_registered_cuts_at_nodes_.find(
+          make_pair(pi.start, pi.last))};
+      if (found_iter != end(min_number_of_registered_cuts_at_nodes_) &&
+          pi.number_of_cuts >= found_iter->second)
+        continue;
       min_number_of_registered_cuts_at_nodes_[make_pair(pi.start, pi.last)] =
           pi.number_of_cuts;
+    }
   }
 
   void find_minimum_number_of_cuts(
       multimap<size_t, size_t>::iterator current,
-      size_t prev_interval_last,
       const multimap<size_t, size_t>::iterator& last,
       size_t& minimum_cuts,
-      size_t current_number_of_cuts,
-      bool skip_add_operation = false) {
+      size_t current_number_of_cuts) {
     if (current_number_of_cuts >= minimum_cuts)
       return;
 
-    const multimap<size_t, size_t>::iterator prev{current};
-
     while (current != last) {
-      while (current != last &&
-             !is_palindromic_substring_interval_overlapped_[make_pair(
-                 current->first, current->second)]) {
-        if (!skip_add_operation) {
-          current_number_of_cuts += current->first - prev_interval_last;
-          if (current_number_of_cuts >= minimum_cuts)
-            return;
-        } else
-          skip_add_operation = false;
-        prev_interval_last = current->second;
-        current = palindromic_substring_intervals_.upper_bound(current->second);
+      multimap<size_t, size_t>::iterator next{current};
+      ++next;
+
+      while (next != last && next->first > current->second) {
+        current_number_of_cuts += next->first - current->second;
+        if (current_number_of_cuts >= minimum_cuts)
+          return;
+        current = next;
+        ++next;
       }
 
-      if (last == current) {
-        if (current_number_of_cuts + s_len_ - 1 - prev_interval_last <
+      if (last == next) {
+        if (current_number_of_cuts + s_len_ - 1 - current->second <
             minimum_cuts) {
-          minimum_cuts =
-              current_number_of_cuts + s_len_ - 1 - prev_interval_last;
+          minimum_cuts = current_number_of_cuts + s_len_ - 1 - current->second;
           update_currently_calculated_minimum_number_of_cuts_at_visited_nodes();
         }
         return;
       }
 
-      if (prev == current) {
-        const multimap<size_t, size_t>::iterator next{
-            palindromic_substring_intervals_.upper_bound(current->second)};
-        if (next != last) {
-          const auto found_iter{min_number_of_registered_cuts_at_nodes_.find(
-              make_pair(next->first, next->second))};
-          const size_t number_of_cuts_for_next_node{
-              current_number_of_cuts + next->first - current->second};
-          if (found_iter != end(min_number_of_registered_cuts_at_nodes_) &&
-              number_of_cuts_for_next_node >= found_iter->second)
-            return;
-          currently_visited_palindromic_substring_intervals_.emplace_back(
-              next->first, next->second, number_of_cuts_for_next_node);
-          find_minimum_number_of_cuts(next, current->second, last, minimum_cuts,
-                                      number_of_cuts_for_next_node, true);
-          currently_visited_palindromic_substring_intervals_.pop_back();
-        } else {
-          if (current_number_of_cuts + s_len_ - 1 - current->second <
-              minimum_cuts) {
-            minimum_cuts =
-                current_number_of_cuts + s_len_ - 1 - current->second;
-            update_currently_calculated_minimum_number_of_cuts_at_visited_nodes();
-          }
-          return;
+      const size_t last_interval_second{current->second};
+
+      next = palindromic_substring_intervals_.upper_bound(last_interval_second);
+      if (last == next) {
+        if (current_number_of_cuts + s_len_ - 1 - last_interval_second <
+            minimum_cuts) {
+          minimum_cuts =
+              current_number_of_cuts + s_len_ - 1 - last_interval_second;
+          update_currently_calculated_minimum_number_of_cuts_at_visited_nodes();
         }
       } else {
         const auto found_iter{min_number_of_registered_cuts_at_nodes_.find(
-            make_pair(current->first, current->second))};
+            make_pair(next->first, next->second))};
         const size_t number_of_cuts_for_next_node{
-            current_number_of_cuts + current->first - prev_interval_last};
+            current_number_of_cuts + next->first - last_interval_second};
         if (found_iter != end(min_number_of_registered_cuts_at_nodes_) &&
             number_of_cuts_for_next_node >= found_iter->second)
           return;
         currently_visited_palindromic_substring_intervals_.emplace_back(
-            current->first, current->second, number_of_cuts_for_next_node);
-        find_minimum_number_of_cuts(current, prev_interval_last, last,
-                                    minimum_cuts, number_of_cuts_for_next_node,
-                                    true);
+            next->first, next->second, number_of_cuts_for_next_node);
+        find_minimum_number_of_cuts(next, last, minimum_cuts,
+                                    number_of_cuts_for_next_node);
         currently_visited_palindromic_substring_intervals_.pop_back();
       }
-      const size_t last_interval_second{current->second};
+
+      const size_t last_interval_first{current->first};
+
       ++current;
       if (last == current) {
         if (current_number_of_cuts + s_len_ - 1 - last_interval_second <
@@ -257,12 +157,15 @@ class Solution {
         }
         return;
       }
-      skip_add_operation = false;
+
+      if (next == current)
+        return;
+      current_number_of_cuts += current->first - last_interval_first;
     }
   }
 
-  bool is_palindromic_substr(const size_t start, const size_t last) {
-    for (size_t i{start + 1}, j{last - 2}; i < j; i++, j--) {
+  bool is_palindromic_substr(const size_t start, const size_t last) const {
+    for (size_t i{start}, j{last - 1}; i < j; ++i, --j) {
       if (s_[i] != s_[j])
         return false;
     }
@@ -295,9 +198,9 @@ class Solution {
 
     const auto first_pi_iter{begin(palindromic_substring_intervals_)};
 
-    find_minimum_number_of_cuts(first_pi_iter, 0,
+    find_minimum_number_of_cuts(first_pi_iter,
                                 end(palindromic_substring_intervals_),
-                                minimum_cuts, 0);
+                                minimum_cuts, first_pi_iter->first);
 
     return minimum_cuts;
   }
@@ -369,38 +272,24 @@ int main() {
        << '\n';  // expected output: 42
 
   cout << "s.minCut("
-          "\"adabdcaebdcebdcacaaaadbbcadabcbeabaadcbcaaddebdbddcbdacdbbaedbda"
-          "ae"
-          "cabdceddccbdeeddccdaabbabbdedaaabcdadbdabeacbeadbaddcbaacdbabcccba"
-          "ce"
-          "edbcccedbeecbccaecadccbdbdccbcbaacccbddcccbaedbacdbcaccdcaadcbaebe"
-          "bc"
-          "ceabbdcdeaabdbabadeaaaaedbdbcebcbddebccacacddebecabccbbdcbecbaeedc"
-          "da"
-          "cdcbdbebbacddddaabaedabbaaabaddcdaadcccdeebcabacdadbaacdccbeceddee"
-          "bb"
-          "bdbaaaaabaeecccaebdeabddacbedededebdebabdbcbdcbadbeeceecdcdbbdcbdb"
-          "ee"
-          "ebcdcabdeeacabdeaedebbcaacdadaecbccbededceceabdcabdeabbcdecdedadca"
-          "eb"
+          "\"adabdcaebdcebdcacaaaadbbcadabcbeabaadcbcaaddebdbddcbdacdbbaedbdaae"
+          "cabdceddccbdeeddccdaabbabbdedaaabcdadbdabeacbeadbaddcbaacdbabcccbace"
+          "edbcccedbeecbccaecadccbdbdccbcbaacccbddcccbaedbacdbcaccdcaadcbaebebc"
+          "ceabbdcdeaabdbabadeaaaaedbdbcebcbddebccacacddebecabccbbdcbecbaeedcda"
+          "cdcbdbebbacddddaabaedabbaaabaddcdaadcccdeebcabacdadbaacdccbeceddeebb"
+          "bdbaaaaabaeecccaebdeabddacbedededebdebabdbcbdcbadbeeceecdcdbbdcbdbee"
+          "ebcdcabdeeacabdeaedebbcaacdadaecbccbededceceabdcabdeabbcdecdedadcaeb"
           "aababeedcaacdbdacbccdbcece\") -> "
-       << s.minCut(
-              string{"adabdcaebdcebdcacaaaadbbcadabcbeabaadcbcaaddebdbddcbdac"
-                     "dbbaedbda"
-                     "aecabdceddccbdeeddccdaabbabbdedaaabcdadbdabeacbeadbaddc"
-                     "baacdbabc"
-                     "ccbaceedbcccedbeecbccaecadccbdbdccbcbaacccbddcccbaedbac"
-                     "dbcaccdca"
-                     "adcbaebebcceabbdcdeaabdbabadeaaaaedbdbcebcbddebccacacdd"
-                     "ebecabccb"
-                     "bdcbecbaeedcdacdcbdbebbacddddaabaedabbaaabaddcdaadcccde"
-                     "ebcabacda"
-                     "dbaacdccbeceddeebbbdbaaaaabaeecccaebdeabddacbedededebde"
-                     "babdbcbdc"
-                     "badbeeceecdcdbbdcbdbeeebcdcabdeeacabdeaedebbcaacdadaecb"
-                     "ccbededce"
-                     "ceabdcabdeabbcdecdedadcaebaababeedcaacdbdacbccdbcece"})
-       << '\n';  // expected output: 273
+       << s.minCut(string{
+              "adabdcaebdcebdcacaaaadbbcadabcbeabaadcbcaaddebdbddcbdacdbbaedbda"
+              "aecabdceddccbdeeddccdaabbabbdedaaabcdadbdabeacbeadbaddcbaacdbabc"
+              "ccbaceedbcccedbeecbccaecadccbdbdccbcbaacccbddcccbaedbacdbcaccdca"
+              "adcbaebebcceabbdcdeaabdbabadeaaaaedbdbcebcbddebccacacddebecabccb"
+              "bdcbecbaeedcdacdcbdbebbacddddaabaedabbaaabaddcdaadcccdeebcabacda"
+              "dbaacdccbeceddeebbbdbaaaaabaeecccaebdeabddacbedededebdebabdbcbdc"
+              "badbeeceecdcdbbdcbdbeeebcdcabdeeacabdeaedebbcaacdadaecbccbededce"
+              "ceabdcabdeabbcdecdedadcaebaababeedcaacdbdacbccdbcece"})
+       << '\n';  // expected output: 276
 
   cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
