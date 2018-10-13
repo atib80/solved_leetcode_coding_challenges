@@ -19,7 +19,6 @@ cut.
 #include <iostream>
 #include <map>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -33,44 +32,103 @@ struct palindromic_interval {
 
   palindromic_interval(const size_t start,
                        const size_t last,
-                       const size_t number_of_cuts)
+                       const size_t number_of_cuts = 0)
       : start{start}, last{last}, number_of_cuts{number_of_cuts} {}
 };
 
 static size_t s_len;
 
-// namespace std {
+namespace std {
 template <>
 struct hash<pair<size_t, size_t>> {
   size_t operator()(const pair<size_t, size_t>& p) const noexcept {
     return p.first * s_len + p.second;
   }
 };
-// }  // namespace std
+}  // namespace std
 
 class Solution {
   unordered_map<char, vector<size_t>> char_positions_;
   multimap<size_t, size_t> palindromic_substring_intervals_;
   unordered_map<pair<size_t, size_t>, size_t>
       min_number_of_registered_cuts_at_nodes_;
+  unordered_map<pair<size_t, size_t>, int>
+      is_palindromic_substring_interval_overlapped_;
+  vector<palindromic_interval> palindromic_intervals_;
   vector<palindromic_interval>
       currently_visited_palindromic_substring_intervals_;
   string s_;
-  size_t s_len_{};
+  size_t s_len_{}, minimum_cuts{string::npos};
+  multimap<size_t, size_t>::iterator last;
+
+  bool find_overshadowed_shorter_palindromic_intervals(
+      const palindromic_interval& pi,
+      vector<pair<size_t, size_t>>& remove_palindromic_intervals) {
+    bool is_found_overshadowed_palindromic_intervals{};
+    for (const auto& p : palindromic_substring_intervals_) {
+      if (p.first == pi.start && p.second == pi.last)
+        continue;
+      if ((p.first < pi.start && p.second >= pi.start && p.second <= pi.last) ||
+          (p.first >= pi.start && p.first <= pi.last && p.second > pi.last))
+        return false;
+      if (pi.start <= p.first && pi.last >= p.second) {
+        remove_palindromic_intervals.emplace_back(p.first, p.second);
+        is_found_overshadowed_palindromic_intervals = true;
+      }
+    }
+    is_palindromic_substring_interval_overlapped_[make_pair(pi.start,
+                                                            pi.last)] = 0;
+    return is_found_overshadowed_palindromic_intervals;
+  }
 
   void find_all_palindromic_substring_intervals() {
     palindromic_substring_intervals_.clear();
+    is_palindromic_substring_interval_overlapped_.clear();
     min_number_of_registered_cuts_at_nodes_.clear();
-
+    palindromic_intervals_.clear();
     for (const auto& char_indices : char_positions_) {
       const vector<size_t>& char_offsets{char_indices.second};
-
-      for (size_t i{}; i < char_offsets.size() - 1; ++i)
+      for (size_t i{}; i < char_offsets.size() - 1; ++i) {
         for (size_t j{i + 1}; j < char_offsets.size(); ++j) {
-          if (is_palindromic_substr(char_offsets[i], char_offsets[j] + 1))
+          if (is_palindromic_substr(char_offsets[i], char_offsets[j] + 1)) {
             palindromic_substring_intervals_.emplace(char_offsets[i],
                                                      char_offsets[j]);
+            is_palindromic_substring_interval_overlapped_[make_pair(
+                char_offsets[i], char_offsets[j])] = 1;
+            palindromic_intervals_.emplace_back(char_offsets[i],
+                                                char_offsets[j]);
+          }
         }
+      }
+    }
+
+    sort(begin(palindromic_intervals_), end(palindromic_intervals_),
+         [](const palindromic_interval& lhs, const palindromic_interval& rhs) {
+           return lhs.last - lhs.start > rhs.last - rhs.start;
+         });
+    for (const auto& pi : palindromic_intervals_) {
+      if (is_palindromic_substring_interval_overlapped_.find(
+              make_pair(pi.start, pi.last)) ==
+          end(is_palindromic_substring_interval_overlapped_))
+        continue;
+      vector<pair<size_t, size_t>> remove_palindromic_intervals{};
+      if (find_overshadowed_shorter_palindromic_intervals(
+              pi, remove_palindromic_intervals)) {
+        for (const pair<size_t, size_t>& rpi : remove_palindromic_intervals) {
+          for (auto current{
+                   palindromic_substring_intervals_.lower_bound(rpi.first)};
+               current !=
+               palindromic_substring_intervals_.upper_bound(rpi.first);
+               ++current) {
+            if (rpi.second == current->second) {
+              palindromic_substring_intervals_.erase(current);
+              is_palindromic_substring_interval_overlapped_.erase(
+                  make_pair(rpi.first, rpi.second));
+              break;
+            }
+          }
+        }
+      }
     }
 
     currently_visited_palindromic_substring_intervals_.clear();
@@ -91,14 +149,8 @@ class Solution {
     }
   }
 
-  void find_minimum_number_of_cuts(
-      multimap<size_t, size_t>::iterator current,
-      const multimap<size_t, size_t>::iterator& last,
-      size_t& minimum_cuts,
-      size_t current_number_of_cuts) {
-    if (current_number_of_cuts >= minimum_cuts)
-      return;
-
+  void find_minimum_number_of_cuts(multimap<size_t, size_t>::iterator current,
+                                   size_t current_number_of_cuts) {
     while (current != last) {
       multimap<size_t, size_t>::iterator next{current};
       ++next;
@@ -107,6 +159,13 @@ class Solution {
         current_number_of_cuts += next->first - current->second;
         if (current_number_of_cuts >= minimum_cuts)
           return;
+        const auto found_iter{min_number_of_registered_cuts_at_nodes_.find(
+            make_pair(current->first, current->second))};
+        if (found_iter != end(min_number_of_registered_cuts_at_nodes_) &&
+            current_number_of_cuts >= found_iter->second)
+          return;
+        currently_visited_palindromic_substring_intervals_.emplace_back(
+            current->first, current->second, current_number_of_cuts);
         current = next;
         ++next;
       }
@@ -130,20 +189,9 @@ class Solution {
               current_number_of_cuts + s_len_ - 1 - last_interval_second;
           update_currently_calculated_minimum_number_of_cuts_at_visited_nodes();
         }
-      } else {
-        const auto found_iter{min_number_of_registered_cuts_at_nodes_.find(
-            make_pair(next->first, next->second))};
-        const size_t number_of_cuts_for_next_node{
-            current_number_of_cuts + next->first - last_interval_second};
-        if (found_iter != end(min_number_of_registered_cuts_at_nodes_) &&
-            number_of_cuts_for_next_node >= found_iter->second)
-          return;
-        currently_visited_palindromic_substring_intervals_.emplace_back(
-            next->first, next->second, number_of_cuts_for_next_node);
-        find_minimum_number_of_cuts(next, last, minimum_cuts,
-                                    number_of_cuts_for_next_node);
-        currently_visited_palindromic_substring_intervals_.pop_back();
-      }
+      } else
+        find_minimum_number_of_cuts(
+            next, current_number_of_cuts + next->first - last_interval_second);
 
       const size_t last_interval_first{current->first};
 
@@ -160,12 +208,14 @@ class Solution {
 
       if (next == current)
         return;
+
       current_number_of_cuts += current->first - last_interval_first;
     }
   }
 
-  bool is_palindromic_substr(const size_t start, const size_t last) const {
-    for (size_t i{start}, j{last - 1}; i < j; ++i, --j) {
+  bool is_palindromic_substr(const size_t start_pos,
+                             const size_t last_pos) const {
+    for (size_t i{start_pos}, j{last_pos - 1}; i < j; ++i, --j) {
       if (s_[i] != s_[j])
         return false;
     }
@@ -182,25 +232,36 @@ class Solution {
 
     s_ = move(s);
 
-    if (s_.front() == s_.back() && is_palindromic_substr(0, s_len_))
-      return 0;
+    size_t i{}, j{s_len_}, pi_count{};
+    while (j - i > 1) {
+      if (is_palindromic_substr(i, j)) {
+        pi_count++;
+        if (s_len_ == j)
+          return pi_count - 1;
+        i = j;
+        j = s_len_;
+        continue;
+      }
+
+      j--;
+    }
 
     char_positions_.clear();
 
-    for (size_t i{}; i < s_len_; ++i)
+    for (i = 0; i < s_len_; ++i)
       char_positions_[s_[i]].emplace_back(i);
 
     find_all_palindromic_substring_intervals();
 
-    size_t minimum_cuts{string::npos};
     if (palindromic_substring_intervals_.empty())
       return s_len_ - 1;
 
+    minimum_cuts = string::npos;
+    last = end(palindromic_substring_intervals_);
+
     const auto first_pi_iter{begin(palindromic_substring_intervals_)};
 
-    find_minimum_number_of_cuts(first_pi_iter,
-                                end(palindromic_substring_intervals_),
-                                minimum_cuts, first_pi_iter->first);
+    find_minimum_number_of_cuts(first_pi_iter, first_pi_iter->first);
 
     return minimum_cuts;
   }
@@ -272,24 +333,130 @@ int main() {
        << '\n';  // expected output: 42
 
   cout << "s.minCut("
-          "\"adabdcaebdcebdcacaaaadbbcadabcbeabaadcbcaaddebdbddcbdacdbbaedbdaae"
-          "cabdceddccbdeeddccdaabbabbdedaaabcdadbdabeacbeadbaddcbaacdbabcccbace"
-          "edbcccedbeecbccaecadccbdbdccbcbaacccbddcccbaedbacdbcaccdcaadcbaebebc"
-          "ceabbdcdeaabdbabadeaaaaedbdbcebcbddebccacacddebecabccbbdcbecbaeedcda"
-          "cdcbdbebbacddddaabaedabbaaabaddcdaadcccdeebcabacdadbaacdccbeceddeebb"
-          "bdbaaaaabaeecccaebdeabddacbedededebdebabdbcbdcbadbeeceecdcdbbdcbdbee"
-          "ebcdcabdeeacabdeaedebbcaacdadaecbccbededceceabdcabdeabbcdecdedadcaeb"
+          "\"adabdcaebdcebdcacaaaadbbcadabcbeabaadcbcaaddebdbddcbdacdbbaedbda"
+          "ae"
+          "cabdceddccbdeeddccdaabbabbdedaaabcdadbdabeacbeadbaddcbaacdbabcccba"
+          "ce"
+          "edbcccedbeecbccaecadccbdbdccbcbaacccbddcccbaedbacdbcaccdcaadcbaebe"
+          "bc"
+          "ceabbdcdeaabdbabadeaaaaedbdbcebcbddebccacacddebecabccbbdcbecbaeedc"
+          "da"
+          "cdcbdbebbacddddaabaedabbaaabaddcdaadcccdeebcabacdadbaacdccbeceddee"
+          "bb"
+          "bdbaaaaabaeecccaebdeabddacbedededebdebabdbcbdcbadbeeceecdcdbbdcbdb"
+          "ee"
+          "ebcdcabdeeacabdeaedebbcaacdadaecbccbededceceabdcabdeabbcdecdedadca"
+          "eb"
           "aababeedcaacdbdacbccdbcece\") -> "
-       << s.minCut(string{
-              "adabdcaebdcebdcacaaaadbbcadabcbeabaadcbcaaddebdbddcbdacdbbaedbda"
-              "aecabdceddccbdeeddccdaabbabbdedaaabcdadbdabeacbeadbaddcbaacdbabc"
-              "ccbaceedbcccedbeecbccaecadccbdbdccbcbaacccbddcccbaedbacdbcaccdca"
-              "adcbaebebcceabbdcdeaabdbabadeaaaaedbdbcebcbddebccacacddebecabccb"
-              "bdcbecbaeedcdacdcbdbebbacddddaabaedabbaaabaddcdaadcccdeebcabacda"
-              "dbaacdccbeceddeebbbdbaaaaabaeecccaebdeabddacbedededebdebabdbcbdc"
-              "badbeeceecdcdbbdcbdbeeebcdcabdeeacabdeaedebbcaacdadaecbccbededce"
-              "ceabdcabdeabbcdecdedadcaebaababeedcaacdbdacbccdbcece"})
+       << s.minCut(
+              string{"adabdcaebdcebdcacaaaadbbcadabcbeabaadcbcaaddebdbddcbdac"
+                     "dbbaedbda"
+                     "aecabdceddccbdeeddccdaabbabbdedaaabcdadbdabeacbeadbaddc"
+                     "baacdbabc"
+                     "ccbaceedbcccedbeecbccaecadccbdbdccbcbaacccbddcccbaedbac"
+                     "dbcaccdca"
+                     "adcbaebebcceabbdcdeaabdbabadeaaaaedbdbcebcbddebccacacdd"
+                     "ebecabccb"
+                     "bdcbecbaeedcdacdcbdbebbacddddaabaedabbaaabaddcdaadcccde"
+                     "ebcabacda"
+                     "dbaacdccbeceddeebbbdbaaaaabaeecccaebdeabddacbedededebde"
+                     "babdbcbdc"
+                     "badbeeceecdcdbbdcbdbeeebcdcabdeeacabdeaedebbcaacdadaecb"
+                     "ccbededce"
+                     "ceabdcabdeabbcdecdedadcaebaababeedcaacdbdacbccdbcece"})
        << '\n';  // expected output: 276
+
+  cout << "s.minCut("
+          "\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "aa"
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\") -> "
+       << s.minCut(string{
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aabbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              "aa"
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
+       << '\n';  // expected output: 0
 
   cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
