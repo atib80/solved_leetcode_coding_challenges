@@ -76,6 +76,7 @@ class Solution {
         is_found_overshadowed_palindromic_intervals = true;
       }
     }
+
     is_palindromic_substring_interval_overlapped_[make_pair(pi.start,
                                                             pi.last)] = 0;
     return is_found_overshadowed_palindromic_intervals;
@@ -86,6 +87,11 @@ class Solution {
     is_palindromic_substring_interval_overlapped_.clear();
     min_number_of_registered_cuts_at_nodes_.clear();
     palindromic_intervals_.clear();
+
+    char_positions_.clear();
+    for (size_t i{}; i < s_len_; ++i)
+      char_positions_[s_[i]].emplace_back(i);
+
     for (const auto& char_indices : char_positions_) {
       const vector<size_t>& char_offsets{char_indices.second};
       for (size_t i{}; i < char_offsets.size() - 1; ++i) {
@@ -137,16 +143,16 @@ class Solution {
   }
 
   void update_currently_calculated_minimum_number_of_cuts_at_visited_nodes() {
+    unordered_map<pair<size_t, size_t>, size_t>
+        current_number_of_registered_cuts_at_nodes{};
+
     for (const palindromic_interval& pi :
-         currently_visited_palindromic_substring_intervals_) {
-      const auto found_iter{min_number_of_registered_cuts_at_nodes_.find(
-          make_pair(pi.start, pi.last))};
-      if (found_iter != end(min_number_of_registered_cuts_at_nodes_) &&
-          pi.number_of_cuts >= found_iter->second)
-        continue;
-      min_number_of_registered_cuts_at_nodes_[make_pair(pi.start, pi.last)] =
+         currently_visited_palindromic_substring_intervals_)
+      current_number_of_registered_cuts_at_nodes[make_pair(pi.start, pi.last)] =
           pi.number_of_cuts;
-    }
+
+    min_number_of_registered_cuts_at_nodes_.swap(
+        current_number_of_registered_cuts_at_nodes);
   }
 
   void find_minimum_number_of_cuts(multimap<size_t, size_t>::iterator current,
@@ -223,6 +229,27 @@ class Solution {
     return true;
   }
 
+  bool
+  check_if_whole_input_string_is_comprised_of_palindromic_substr_intervals() {
+    size_t i{}, j{s_len_}, pi_count{};
+    while (j - i > 1) {
+      if (is_palindromic_substr(i, j)) {
+        pi_count++;
+        if (s_len_ == j) {
+          minimum_cuts = pi_count - 1;
+          return true;
+        }
+        i = j;
+        j = s_len_;
+        continue;
+      }
+
+      j--;
+    }
+
+    return false;
+  }
+
  public:
   size_t minCut(string s) {
     s_len = s_len_ = s.length();
@@ -232,24 +259,8 @@ class Solution {
 
     s_ = move(s);
 
-    size_t i{}, j{s_len_}, pi_count{};
-    while (j - i > 1) {
-      if (is_palindromic_substr(i, j)) {
-        pi_count++;
-        if (s_len_ == j)
-          return pi_count - 1;
-        i = j;
-        j = s_len_;
-        continue;
-      }
-
-      j--;
-    }
-
-    char_positions_.clear();
-
-    for (i = 0; i < s_len_; ++i)
-      char_positions_[s_[i]].emplace_back(i);
+    if (check_if_whole_input_string_is_comprised_of_palindromic_substr_intervals())
+      return minimum_cuts;
 
     find_all_palindromic_substring_intervals();
 
