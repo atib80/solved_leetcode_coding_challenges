@@ -32,6 +32,14 @@ The player started at (0, 0) and went down, down, right right to reach (2, 2).
 home, picking up one more cherry. The total number of cherries picked up is 5,
 and this is the maximum possible.
 
+[1, 1, 1, 1, 0, 0, 0]
+[0, 0, 0, 1, 0, 0, 0]
+[0, 0, 0, 1, 0, 0, 1]
+[1, 0, 0, 1, 0, 0, 0]
+[0, 0, 0, 1, 0, 0, 0]
+[0, 0, 0, 1, 0, 0, 0]
+[0, 0, 0, 1, 1, 1, 1]
+
 Note:
 grid is an N by N 2D array, with 1 <= N <= 50.
 Each grid[i][j] is an integer in the set {-1, 0, 1}.
@@ -41,123 +49,190 @@ It is guaranteed that grid[0][0] and grid[N-1][N-1] are not -1.
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 using namespace std;
 
+static size_t grid_width;
+
+namespace std {
+template <>
+struct hash<pair<size_t, size_t>> {
+  size_t operator()(const pair<size_t, size_t>& p) const noexcept {
+    return p.first * grid_width + p.second;
+  }
+};
+}  // namespace std
+
+struct cell {
+  size_t x;
+  size_t y;
+  size_t cherry_count;
+
+  cell(const size_t x_coord, const size_t y_coord, const size_t cherries)
+      : x{x_coord}, y{y_coord}, cherry_count{cherries} {}
+};
+
 class Solution {
   vector<vector<int>> grid_;
+  unordered_map<pair<size_t, size_t>, size_t>
+      registered_min_cherries_for_nodes_right_down_;
+  unordered_map<pair<size_t, size_t>, size_t>
+      registered_min_cherries_for_nodes_left_up_;
+  vector<cell> currently_visited_cells_by_going_down_and_right_;
+  vector<cell> currently_visited_cells_by_going_up_and_left_;
   size_t grid_width_{};
   size_t grid_height_{};
-  int start_cell_value_{};
-  int end_cell_value_{};
+  size_t max_cherry_count_{};
 
-  void find_closest_neighbors_going_right_and_downwards(
-      const size_t x,
-      const size_t y,
-      vector<pair<size_t, size_t>>& next_cherry_positions) {
-    if ((1 == grid_[x][y]) || (grid_height_ - 1 == x && grid_width_ - 1 == y)) {
-      next_cherry_positions.emplace_back(x, y);
-      grid_[x][y] = 2;
-      return;
-    }
+  void update_currently_picked_up_cherries_for_visited_cells() {
+    unordered_map<pair<size_t, size_t>, size_t>
+        number_of_picked_up_cherries_at_nodes_going_down_and_right{};
+    unordered_map<pair<size_t, size_t>, size_t>
+        number_of_picked_up_cherries_at_nodes_going_up_and_left{};
 
-    if (x < grid_height_ - 1 && (0 == grid_[x + 1][y] || 1 == grid_[x + 1][y]))
-      find_closest_neighbors_going_right_and_downwards(x + 1, y,
-                                                       next_cherry_positions);
-    if (y < grid_width_ - 1 && (0 == grid_[x][y + 1] || 1 == grid_[x][y + 1]))
-      find_closest_neighbors_going_right_and_downwards(x, y + 1,
-                                                       next_cherry_positions);
+    for (const cell& c : currently_visited_cells_by_going_down_and_right_)
+      number_of_picked_up_cherries_at_nodes_going_down_and_right[make_pair(
+          c.x, c.y)] = c.cherry_count;
+
+    registered_min_cherries_for_nodes_right_down_.swap(
+        number_of_picked_up_cherries_at_nodes_going_down_and_right);
+
+    for (const cell& c : currently_visited_cells_by_going_up_and_left_)
+      number_of_picked_up_cherries_at_nodes_going_up_and_left[make_pair(
+          c.x, c.y)] = c.cherry_count;
+
+    registered_min_cherries_for_nodes_left_up_.swap(
+        number_of_picked_up_cherries_at_nodes_going_up_and_left);
   }
 
-  void find_closest_neighbors_going_left_and_upwards(
-      const size_t x,
-      const size_t y,
-      vector<pair<size_t, size_t>>& next_cherry_positions) {
-    if ((1 == grid_[x][y]) || (!x && !y)) {
-      next_cherry_positions.emplace_back(x, y);
-      grid_[x][y] = 2;
-      return;
-    }
-
-    if (x > 0 && (0 == grid_[x - 1][y] || 1 == grid_[x - 1][y]))
-      find_closest_neighbors_going_left_and_upwards(x - 1, y,
-                                                    next_cherry_positions);
-    if (y > 0 && (0 == grid_[x][y - 1] || 1 == grid_[x][y - 1]))
-      find_closest_neighbors_going_left_and_upwards(x, y - 1,
-                                                    next_cherry_positions);
-  }
-
-  void pick_up_most_cherries_by_travelling_right_and_down(
+  bool pick_up_most_cherries_by_traveling_right_and_down(
       const size_t x,
       const size_t y,
       size_t& max_cherries_picked_up,
-      const size_t currently_picked_up_cherries = 0) {
-    if (x == grid_width_ - 1 && y == grid_height_ - 1) {
-      pick_up_most_cherries_by_travelling_left_and_up(
+      const size_t currently_picked_up_cherries) {
+    if (currently_picked_up_cherries + 2 * grid_height_ - 2 - x +
+            2 * grid_width_ - 2 - y <=
+        max_cherries_picked_up)
+      return false;
+
+    if (x == grid_width_ - 1 && y == grid_height_ - 1)
+      return pick_up_most_cherries_by_traveling_left_and_up(
           grid_height_ - 1, grid_width_ - 1, max_cherries_picked_up,
           currently_picked_up_cherries);
-      return;
+
+    if (x < grid_height_ - 1 && -1 != grid_[x + 1][y]) {
+      const int cell_value{grid_[x + 1][y]};
+      const size_t current_cell_cherry_count{currently_picked_up_cherries +
+                                             cell_value};
+      const auto found_iter{registered_min_cherries_for_nodes_right_down_.find(
+          make_pair(x + 1, y))};
+      if (found_iter != end(registered_min_cherries_for_nodes_right_down_) &&
+          found_iter->second >= current_cell_cherry_count)
+        return false;
+      currently_visited_cells_by_going_down_and_right_.emplace_back(
+          x + 1, y, current_cell_cherry_count);
+      grid_[x + 1][y] = 0;
+      if (pick_up_most_cherries_by_traveling_right_and_down(
+              x + 1, y, max_cherries_picked_up,
+              currently_picked_up_cherries + cell_value))
+        return true;
+      currently_visited_cells_by_going_down_and_right_.pop_back();
+      grid_[x + 1][y] = cell_value;
     }
 
-    vector<pair<size_t, size_t>> next_cherry_positions{};
-    next_cherry_positions.reserve(grid_height_ - x + grid_width_ - y);
-
-    find_closest_neighbors_going_right_and_downwards(x, y,
-                                                     next_cherry_positions);
-    for (const pair<size_t, size_t>& cherry : next_cherry_positions)
-      grid_[cherry.first][cherry.second] = 1;
-
-    for (const pair<size_t, size_t>& cherry : next_cherry_positions) {
-      const int cell_value{grid_height_ - 1 == cherry.first &&
-                                   grid_width_ - 1 == cherry.second
-                               ? end_cell_value_
-                               : 1};
-      grid_[cherry.first][cherry.second] = 0;
-      pick_up_most_cherries_by_travelling_right_and_down(
-          cherry.first, cherry.second, max_cherries_picked_up,
-          currently_picked_up_cherries + cell_value);
-      grid_[cherry.first][cherry.second] = cell_value;
+    if (y < grid_width_ - 1 && -1 != grid_[x][y + 1]) {
+      const int cell_value{grid_[x][y + 1]};
+      const size_t current_cell_cherry_count{currently_picked_up_cherries +
+                                             cell_value};
+      const auto found_iter{registered_min_cherries_for_nodes_right_down_.find(
+          make_pair(x, y + 1))};
+      if (found_iter != end(registered_min_cherries_for_nodes_right_down_) &&
+          found_iter->second >= current_cell_cherry_count)
+        return false;
+      currently_visited_cells_by_going_down_and_right_.emplace_back(
+          x, y + 1, current_cell_cherry_count);
+      grid_[x][y + 1] = 0;
+      if (pick_up_most_cherries_by_traveling_right_and_down(
+              x, y + 1, max_cherries_picked_up,
+              currently_picked_up_cherries + cell_value))
+        return true;
+      currently_visited_cells_by_going_down_and_right_.pop_back();
+      grid_[x][y + 1] = cell_value;
     }
+
+    return false;
   }
 
-  void pick_up_most_cherries_by_travelling_left_and_up(
+  bool pick_up_most_cherries_by_traveling_left_and_up(
       const size_t x,
       const size_t y,
       size_t& max_cherries_picked_up,
       const size_t currently_picked_up_cherries) {
     if (currently_picked_up_cherries + x + y <= max_cherries_picked_up)
-      return;
+      return false;
 
     if (x == 0 && y == 0) {
-      if (currently_picked_up_cherries > max_cherries_picked_up)
+      if (currently_picked_up_cherries > max_cherries_picked_up) {
         max_cherries_picked_up = currently_picked_up_cherries;
-      return;
+        if (currently_picked_up_cherries == max_cherry_count_)
+          return true;
+        update_currently_picked_up_cherries_for_visited_cells();
+      }
+
+      return false;
     }
 
-    vector<pair<size_t, size_t>> next_cherry_positions{};
-    next_cherry_positions.reserve(x + y);
-
-    find_closest_neighbors_going_left_and_upwards(x, y, next_cherry_positions);
-    for (const pair<size_t, size_t>& cherry : next_cherry_positions)
-      grid_[cherry.first][cherry.second] = 1;
-
-    for (const pair<size_t, size_t>& cherry : next_cherry_positions) {
-      const int cell_value{0 == cherry.first && 0 == cherry.second ? 0 : 1};
-      grid_[cherry.first][cherry.second] = 0;
-      pick_up_most_cherries_by_travelling_left_and_up(
-          cherry.first, cherry.second, max_cherries_picked_up,
-          currently_picked_up_cherries + cell_value);
-      grid_[cherry.first][cherry.second] = cell_value;
+    if (x > 0 && -1 != grid_[x - 1][y]) {
+      const int cell_value{grid_[x - 1][y]};
+      const size_t current_cell_cherry_count{currently_picked_up_cherries +
+                                             cell_value};
+      const auto found_iter{
+          registered_min_cherries_for_nodes_left_up_.find(make_pair(x - 1, y))};
+      if (found_iter != end(registered_min_cherries_for_nodes_left_up_) &&
+          found_iter->second >= current_cell_cherry_count)
+        return false;
+      currently_visited_cells_by_going_up_and_left_.emplace_back(
+          x - 1, y, current_cell_cherry_count);
+      grid_[x - 1][y] = 0;
+      if (pick_up_most_cherries_by_traveling_left_and_up(
+              x - 1, y, max_cherries_picked_up,
+              currently_picked_up_cherries + cell_value))
+        return true;
+      currently_visited_cells_by_going_up_and_left_.pop_back();
+      grid_[x - 1][y] = cell_value;
     }
+
+    if (y > 0 && -1 != grid_[x][y - 1]) {
+      const int cell_value{grid_[x][y - 1]};
+      const size_t current_cell_cherry_count{currently_picked_up_cherries +
+                                             cell_value};
+      const auto found_iter{
+          registered_min_cherries_for_nodes_left_up_.find(make_pair(x, y - 1))};
+      if (found_iter != end(registered_min_cherries_for_nodes_left_up_) &&
+          found_iter->second >= current_cell_cherry_count)
+        return false;
+      currently_visited_cells_by_going_up_and_left_.emplace_back(
+          x, y - 1, current_cell_cherry_count);
+      grid_[x][y - 1] = 0;
+      if (pick_up_most_cherries_by_traveling_left_and_up(
+              x, y - 1, max_cherries_picked_up,
+              currently_picked_up_cherries + cell_value))
+        return true;
+      currently_visited_cells_by_going_up_and_left_.pop_back();
+      grid_[x][y - 1] = cell_value;
+    }
+
+    return false;
   }
 
  public:
   int cherryPickup(vector<vector<int>>& grid) {
     grid_ = move(grid);
     grid_height_ = grid_.size();
-    grid_width_ = grid_[0].size();
+    grid_width = grid_width_ = grid_[0].size();
 
     if (1 == grid_height_) {
       if (any_of(begin(grid_[0]), end(grid_[0]),
@@ -167,12 +242,29 @@ class Solution {
       return count(begin(grid_[0]), end(grid_[0]), 1);
     }
 
+    registered_min_cherries_for_nodes_right_down_.clear();
+    registered_min_cherries_for_nodes_left_up_.clear();
+    max_cherry_count_ = 0;
+
+    for (const auto& row : grid_)
+      max_cherry_count_ += count(begin(row), end(row), 1);
+
+    currently_visited_cells_by_going_down_and_right_.clear();
+    currently_visited_cells_by_going_down_and_right_.reserve(grid_width_ +
+                                                             grid_height_);
+
+    currently_visited_cells_by_going_up_and_left_.clear();
+    currently_visited_cells_by_going_up_and_left_.reserve(grid_width_ +
+                                                          grid_height_);
+
     size_t max_cherries_picked_up{};
-    start_cell_value_ = grid_[0][0];
-    end_cell_value_ = grid_[grid_height_ - 1][grid_width_ - 1];
+    const int start_cell_value{grid_[0][0]};
     grid_[0][0] = 0;
-    pick_up_most_cherries_by_travelling_right_and_down(
-        0, 0, max_cherries_picked_up, start_cell_value_);
+
+    if (pick_up_most_cherries_by_traveling_right_and_down(
+            0, 0, max_cherries_picked_up, start_cell_value))
+      cout << "Picked up max. available cherries (" << max_cherries_picked_up
+           << ")\n";
     return max_cherries_picked_up;
   }
 
@@ -237,6 +329,44 @@ int main() {
           "0,1,1,1,0,0,-1,1,0],[1,1,0,1,0,0,1,0,1,-1],[1,-1,0,1,0,0,0,1,-1,1],["
           "1,0,-1,0,-1,0,0,1,0,0],[0,0,-1,0,1,0,1,0,0,1]]) -> "
        << s.cherryPickup(input7) << '\n';  // expected output: 22
+
+  // vector<vector<int>> input8{
+  //     {0, 0, 1, 0, 0, 1, 0, 1, 1, -1, 0, 0, -1, -1, 0, 1, 1, -1, 0, -1},
+  //     {1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0},
+  //     {1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, -1, 0, 1, 1, 0},
+  //     {0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, -1, 1, 0, 0, 1, 0, 0, 1, 1},
+  //     {-1, 0, -1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, -1, 1, 0, 0, 0, 1, 1},
+  //     {0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0},
+  //     {0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, -1, 1, 0, 1, 1, 0, 1, 1, 0},
+  //     {0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1},
+  //     {0, 0, 0, -1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0},
+  //     {1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, -1, 0, -1, 0, 1, 0},
+  //     {0, 1, -1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, -1, 1, 0, 0, -1, 0},
+  //     {0, 0, 0, 0, 1, 0, 1, 0, 0, -1, 0, 1, 0, -1, 0, 0, 1, 0, 1, 1},
+  //     {1, -1, -1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0},
+  //     {-1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0},
+  //     {0, 1, -1, 1, 1, 1, 0, 0, 1, -1, 1, 1, 0, 1, 0, 1, 0, -1, 1, 0},
+  //     {1, -1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, -1, 0, 0, 1, 0, -1},
+  //     {-1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, -1, 0, 1, 0, 0, 1, 0},
+  //     {0, 0, 0, -1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1},
+  //     {0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1},
+  //     {0, 0, 0, 1, -1, 0, -1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, -1, 0}};
+  // cout <<
+  // "s.cherryPickup([[0,0,1,0,0,1,0,1,1,-1,0,0,-1,-1,0,1,1,-1,0,-1],[1,1,"
+  //         "1,0,1,0,0,0,0,1,1,1,1,1,1,1,0,0,1,0],[1,0,1,1,0,0,1,0,0,0,1,0,1,1,1,"
+  //         "-1,0,1,1,0],[0,1,1,0,0,0,1,0,1,1,0,-1,1,0,0,1,0,0,1,1],[-1,0,-1,1,0,"
+  //         "0,1,1,0,0,1,1,0,-1,1,0,0,0,1,1],[0,0,1,0,1,1,0,0,1,0,0,1,0,1,1,1,1,"
+  //         "1,1,0],[0,0,0,1,0,1,1,0,0,1,1,-1,1,0,1,1,0,1,1,0],[0,0,0,0,0,0,1,0,"
+  //         "0,1,0,0,1,0,0,0,1,0,1,1],[0,0,0,-1,1,0,0,1,0,0,1,1,1,1,0,0,0,1,1,0],"
+  //         "[1,0,1,1,1,0,0,1,1,0,1,0,0,0,-1,0,-1,0,1,0],[0,1,-1,1,1,1,1,0,1,0,0,"
+  //         "1,1,0,-1,1,0,0,-1,0],[0,0,0,0,1,0,1,0,0,-1,0,1,0,-1,0,0,1,0,1,1],[1,"
+  //         "-1,-1,0,0,1,1,1,0,1,1,1,1,1,1,0,0,0,1,0],[-1,0,1,1,1,1,1,1,0,1,1,1,"
+  //         "1,1,0,0,1,0,1,0],[0,1,-1,1,1,1,0,0,1,-1,1,1,0,1,0,1,0,-1,1,0],[1,-1,"
+  //         "1,0,1,1,1,0,0,0,1,1,1,1,-1,0,0,1,0,-1],[-1,1,0,0,0,1,1,1,1,1,0,1,1,-"
+  //         "1,0,1,0,0,1,0],[0,0,0,-1,0,1,0,0,0,0,0,0,1,0,1,1,0,0,0,1],[0,1,0,0,"
+  //         "0,0,0,0,0,1,1,1,1,0,0,1,0,0,0,1],[0,0,0,1,-1,0,-1,1,0,1,0,0,0,0,1,0,"
+  //         "0,1,-1,0]]) -> "
+  //      << s.cherryPickup(input8) << '\n';  // expected output: 22
 
   cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
