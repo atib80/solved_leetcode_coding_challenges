@@ -32,14 +32,6 @@ The player started at (0, 0) and went down, down, right right to reach (2, 2).
 home, picking up one more cherry. The total number of cherries picked up is 5,
 and this is the maximum possible.
 
-[1, 1, 1, 1, 0, 0, 0]
-[0, 0, 0, 1, 0, 0, 0]
-[0, 0, 0, 1, 0, 0, 1]
-[1, 0, 0, 1, 0, 0, 0]
-[0, 0, 0, 1, 0, 0, 0]
-[0, 0, 0, 1, 0, 0, 0]
-[0, 0, 0, 1, 1, 1, 1]
-
 Note:
 grid is an N by N 2D array, with 1 <= N <= 50.
 Each grid[i][j] is an integer in the set {-1, 0, 1}.
@@ -58,7 +50,7 @@ class Solution {
   vector<vector<int>> grid_;
   vector<vector<vector<int>>> dp_;
 
-  // max cherries from (x1, y1) to (0, 0) + (x2, y2) to (0, 0)
+  // max cherries picked up going from (x1, y1) to (0, 0) and (x2, y2) to (0, 0)
   int dp(const int x1, const int y1, const int x2) {
     const int y2{x1 + y1 - x2};
     if (x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0)
@@ -69,32 +61,22 @@ class Solution {
       return grid_[y1][x1];
     if (dp_[x1][y1][x2] != INT_MIN)
       return dp_[x1][y1][x2];
-    int ans = max(max(dp(x1 - 1, y1, x2 - 1), dp(x1, y1 - 1, x2)),
-                  max(dp(x1, y1 - 1, x2 - 1), dp(x1 - 1, y1, x2)));
+    int ans{max(max(dp(x1 - 1, y1, x2 - 1), dp(x1, y1 - 1, x2)),
+                max(dp(x1, y1 - 1, x2 - 1), dp(x1 - 1, y1, x2)))};
     if (ans < 0)
       return dp_[x1][y1][x2] = -1;
     ans += grid_[y1][x1];
     if (x1 != x2)
       ans += grid_[y2][x2];
-
-    dp_[x1][y1][x2] = ans;
-
-    return ans;
+    return dp_[x1][y1][x2] = ans;
   }
 
  public:
   int cherryPickup(vector<vector<int>>& grid) {
     grid_ = move(grid);
     const int N = grid_.size();
-    if (1 == N) {
-      if (any_of(begin(grid_[0]), end(grid_[0]),
-                 [](const int c) { return -1 == c; }))
-        return 0;
 
-      return count(begin(grid_[0]), end(grid_[0]), 1);
-    }
-
-    dp_ = vector<vector<vector<int>>>(N, vector<vector<int>>(N, vector<int>(N, INT_MIN)));
+    dp_.assign(N, vector<vector<int>>(N, vector<int>(N, INT_MIN)));
     return max(0, dp(N - 1, N - 1, N - 1));
   }
 
