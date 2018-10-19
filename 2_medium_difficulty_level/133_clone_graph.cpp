@@ -44,6 +44,7 @@ the serialization to solve the problem.
 #include <iostream>
 #include <memory>
 #include <queue>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -54,137 +55,139 @@ using namespace std;
 // Definition for undirected graph.
 struct UndirectedGraphNode {
   int label;
-  bool is_printed{};
-  bool is_deleted{};
   vector<UndirectedGraphNode*> neighbors;
 
-  UndirectedGraphNode(const int x) : label{x} {}
+  UndirectedGraphNode(const int x = -1) : label{x} {}
+};
 
-  UndirectedGraphNode(const UndirectedGraphNode& rhs)
-      : label{rhs.label},
-        is_printed{rhs.is_printed},
-        is_deleted{rhs.is_deleted} {
-    clone_graph(rhs);
+class graph {
+  const UndirectedGraphNode* head_node_;
+  set<int> sorted_graph_indices_;
+  unordered_map<int, unique_ptr<UndirectedGraphNode>> graph_nodes_;
+
+  void clone_graph(const UndirectedGraphNode& src) {
+    const int head_node_index{src.label};
+    queue<const UndirectedGraphNode*> q{{&src}};
+    unordered_set<int> already_visited_graph_nodes{head_node_index};
+
+    while (!q.empty()) {
+      const UndirectedGraphNode* current_node{q.front()};
+
+      q.pop();
+
+      if (graph_nodes_.find(current_node->label) == end(graph_nodes_)) {
+        sorted_graph_indices_.emplace(current_node->label);
+        graph_nodes_[current_node->label] =
+            make_unique<UndirectedGraphNode>(current_node->label);
+      }
+
+      for (UndirectedGraphNode* gnode : current_node->neighbors) {
+        if (graph_nodes_.find(gnode->label) == end(graph_nodes_)) {
+          sorted_graph_indices_.emplace(gnode->label);
+          graph_nodes_[gnode->label] =
+              make_unique<UndirectedGraphNode>(gnode->label);
+        }
+
+        graph_nodes_.at(current_node->label)
+            ->neighbors.emplace_back(graph_nodes_.at(gnode->label).get());
+
+        if (already_visited_graph_nodes.find(gnode->label) ==
+                end(already_visited_graph_nodes) &&
+            graph_nodes_.at(current_node->label)->label != gnode->label) {
+          already_visited_graph_nodes.emplace(gnode->label);
+          q.emplace(gnode);
+        }
+      }
+    }
+
+    head_node_ = graph_nodes_.at(head_node_index).get();
   }
 
-  UndirectedGraphNode& operator=(const UndirectedGraphNode& rhs) {
+ public:
+  graph(const UndirectedGraphNode* head_node = nullptr)
+      : head_node_{head_node} {
+    if (!head_node)
+      return;
+
+    clone_graph(*head_node_);
+  }
+
+  graph(const graph& rhs) : head_node_{} {
+    if (rhs.head_node_) {
+      const int head_node_index{rhs.head_node_->label};
+      clone_graph(*rhs.head_node_);
+      head_node_ = graph_nodes_.at(head_node_index).get();
+    }
+  }
+
+  graph(graph&& rhs) noexcept
+      : head_node_{rhs.head_node_},
+        sorted_graph_indices_{move(rhs.sorted_graph_indices_)},
+        graph_nodes_{move(rhs.graph_nodes_)} {}
+
+  graph& operator=(const graph& rhs) {
     if (this == &rhs)
       return *this;
 
-    UndirectedGraphNode temp_obj{rhs};
+    graph temp_obj{rhs};
     swap(temp_obj);
     return *this;
   }
 
-  UndirectedGraphNode& operator=(UndirectedGraphNode&& rhs) noexcept {
+  graph& operator=(graph&& rhs) noexcept {
     if (this == &rhs)
       return *this;
 
-    label = rhs.label;
-    rhs.label = -1;
-    is_printed = rhs.is_printed;
-    rhs.is_printed = true;
-    is_deleted = rhs.is_deleted;
-    rhs.is_deleted = true;
-    neighbors = move(rhs.neighbors);
+    head_node_ = rhs.head_node_;
+    sorted_graph_indices_ = move(rhs.sorted_graph_indices_);
+    graph_nodes_ = move(rhs.graph_nodes_);
+
     return *this;
   }
 
-  void swap(UndirectedGraphNode& rhs) noexcept {
+  void swap(graph& rhs) noexcept {
     using std::swap;
 
-    swap(label, rhs.label);
-    swap(is_printed, rhs.is_printed);
-    swap(is_deleted, rhs.is_deleted);
-    neighbors.swap(rhs.neighbors);
+    swap(head_node_, rhs.head_node_);
+    sorted_graph_indices_.swap(rhs.sorted_graph_indices_);
+    graph_nodes_.swap(rhs.graph_nodes_);
   }
 
-  UndirectedGraphNode(UndirectedGraphNode&& rhs) noexcept
-      : label{rhs.label},
-        is_printed{rhs.is_printed},
-        is_deleted{rhs.is_deleted},
-        neighbors{move(rhs.neighbors)} {
-    rhs.label = -1;
-    rhs.is_printed = true;
-    rhs.is_deleted = true;
+  ~graph() = default;
+
+  friend ostream& operator<<(ostream&, const graph&);
+
+  explicit operator bool() const { return head_node_ != nullptr; }
+
+  graph clone() const {
+    graph temp_obj{*this};
+    return temp_obj;
   }
 
-  ~UndirectedGraphNode() {
-    is_deleted = true;
-    for (UndirectedGraphNode* n : neighbors) {
-      if (this == n || n->is_deleted)
-        continue;
-      delete n;
-    }
-  }
+  const UndirectedGraphNode* get_head_node() const { return head_node_; }
 
-  bool get_is_printed() const { return is_printed; }
-
-  void set_is_printed(const bool is_printed_val) {
-    for (UndirectedGraphNode* node : neighbors) {
-      if (this != node)
-        node->set_is_printed(is_printed_val);
-    }
-    is_printed = is_printed_val;
-  }
-
- private:
-  void clone_graph(const UndirectedGraphNode& src) {
-    unordered_map<int, UndirectedGraphNode*> graph_nodes{};
-    unordered_set<int> already_visited_graph_nodes{};
-
-    for (UndirectedGraphNode* node : src.neighbors) {
-      UndirectedGraphNode* gn;
-
-      if (graph_nodes.find(node->label) == end(graph_nodes)) {
-        gn = new UndirectedGraphNode{node->label};
-        graph_nodes.emplace(node->label, gn);
-      } else
-        gn = graph_nodes.at(node->label);
-
-      neighbors.emplace_back(gn);
-
-      queue<UndirectedGraphNode*> q{{node}};
-
-      while (!q.empty()) {
-        UndirectedGraphNode* current_node{q.front()};
-        q.pop();
-
-        for (const auto gnode : current_node->neighbors) {
-          if (graph_nodes.find(gnode->label) == end(graph_nodes)) {
-            const auto nn = new UndirectedGraphNode{gnode->label};
-            graph_nodes.emplace(gnode->label, nn);
-            gn->neighbors.emplace_back(nn);
-          } else
-            gn->neighbors.emplace_back(graph_nodes.at(gnode->label));
-
-          if (already_visited_graph_nodes.find(gnode->label) ==
-                  end(already_visited_graph_nodes) &&
-              gn->label != gnode->label) {
-            already_visited_graph_nodes.emplace(gnode->label);
-            q.emplace(gnode);
-          }
-        }
-      }
-    }
+  int get_head_node_index() const {
+    if (head_node_)
+      return head_node_->label;
+    return -1;
   }
 };
 
-void swap(UndirectedGraphNode& lhs, UndirectedGraphNode& rhs) noexcept {
+void swap(graph& lhs, graph& rhs) noexcept {
   lhs.swap(rhs);
 }
 
-ostream& operator<<(ostream& os, UndirectedGraphNode& gn) {
-  gn.is_printed = true;
-  os << "Node: " << gn.label << " is connected to nodes (";
-  if (!gn.neighbors.empty()) {
-    for (size_t i{}; i < gn.neighbors.size() - 1; ++i)
-      os << gn.neighbors[i]->label << ',';
-    os << gn.neighbors.back()->label << ")\n";
-    for (UndirectedGraphNode* n : gn.neighbors) {
-      if (n->label != gn.label && !n->is_printed)
-        os << *n;
+ostream& operator<<(ostream& os, const graph& g) {
+  for (const int node_index : g.sorted_graph_indices_) {
+    os << "Node: " << node_index << " is connected to nodes (";
+    if (!g.graph_nodes_.at(node_index)->neighbors.empty()) {
+      for (size_t i{}; i < g.graph_nodes_.at(node_index)->neighbors.size() - 1;
+           ++i)
+        os << g.graph_nodes_.at(node_index)->neighbors[i]->label << ',';
+      os << g.graph_nodes_.at(node_index)->neighbors.back()->label;
     }
+
+    os << ")\n";
   }
 
   return os;
@@ -192,16 +195,16 @@ ostream& operator<<(ostream& os, UndirectedGraphNode& gn) {
 
 class Solution {
  public:
-  UndirectedGraphNode* cloneGraph(UndirectedGraphNode* node) {
+  UndirectedGraphNode* cloneGraph(const UndirectedGraphNode* node) const {
     if (!node)
       return nullptr;
 
     unordered_map<int, UndirectedGraphNode*> graph_nodes{};
-    unordered_set<int> already_visited_graph_nodes{};
-    queue<UndirectedGraphNode*> q{{node}};
+    unordered_set<int> already_visited_graph_nodes{node->label};
+    queue<const UndirectedGraphNode*> q{{node}};
 
     while (!q.empty()) {
-      UndirectedGraphNode* current_node{q.front()};
+      const UndirectedGraphNode* current_node{q.front()};
       q.pop();
 
       UndirectedGraphNode* gn;
@@ -253,14 +256,15 @@ int main() {
   head_node.neighbors.emplace_back(&node2);
   node1.neighbors.emplace_back(&node2);
   node2.neighbors.emplace_back(&node2);
+  const graph graph_diagram{&head_node};
 
-  cout << "Original graph's nodes:\n" << head_node << '\n';
+  cout << "Original graph's nodes:\n" << graph_diagram << '\n';
 
-  head_node.set_is_printed(false);
+  // const graph cloned_graph_diagram{graph_diagram.clone()};
+  const graph cloned_graph_diagram{s.cloneGraph(graph_diagram.get_head_node())};
 
-  const unique_ptr<UndirectedGraphNode> cloned_graph{s.cloneGraph(&head_node)};
-  if (cloned_graph)
-    cout << *cloned_graph;
+  if (cloned_graph_diagram)
+    cout << cloned_graph_diagram;
 
   cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
