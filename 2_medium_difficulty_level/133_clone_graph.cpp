@@ -40,6 +40,7 @@ the serialization to solve the problem.
 */
 
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <queue>
@@ -230,10 +231,22 @@ class Solution {
 
     return graph_nodes.at(node->label);
   }
+
+  static double start_stop_timer(const bool is_start_timer = false) {
+    static chrono::high_resolution_clock::time_point start_time;
+    if (is_start_timer)
+      start_time = chrono::high_resolution_clock::now();
+
+    return chrono::duration_cast<chrono::duration<double>>(
+               chrono::high_resolution_clock::now() - start_time)
+        .count();
+  }
 };
 
 int main() {
   Solution s{};
+
+  Solution::start_stop_timer(true);
 
   UndirectedGraphNode head_node{0}, node1{1}, node2{2};
   head_node.neighbors.emplace_back(&node1);
@@ -248,6 +261,8 @@ int main() {
   const unique_ptr<UndirectedGraphNode> cloned_graph{s.cloneGraph(&head_node)};
   if (cloned_graph)
     cout << *cloned_graph;
+
+  cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
   return 0;
 }
