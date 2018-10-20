@@ -58,6 +58,17 @@ struct UndirectedGraphNode {
   vector<UndirectedGraphNode*> neighbors;
 
   UndirectedGraphNode(const int x = -1) : label{x} {}
+
+  void destroy() {
+    if (label != INT_MIN) {
+      label = INT_MIN;
+      for (UndirectedGraphNode* node : neighbors) {
+        if (this == node || INT_MIN == node->label)
+          continue;
+        delete node;
+      }
+    }
+  }
 };
 
 class graph {
@@ -93,7 +104,7 @@ class graph {
 
         if (already_visited_graph_nodes.find(gnode->label) ==
                 end(already_visited_graph_nodes) &&
-            graph_nodes_.at(current_node->label)->label != gnode->label) {
+            current_node->label != gnode->label) {
           already_visited_graph_nodes.emplace(gnode->label);
           q.emplace(gnode);
         }
@@ -261,7 +272,10 @@ int main() {
   cout << "Original graph's nodes:\n" << graph_diagram << '\n';
 
   // const graph cloned_graph_diagram{graph_diagram.clone()};
-  const graph cloned_graph_diagram{s.cloneGraph(graph_diagram.get_head_node())};
+  UndirectedGraphNode* cloned_graph_head_node{
+      s.cloneGraph(graph_diagram.get_head_node())};
+  const graph cloned_graph_diagram{cloned_graph_head_node};
+  cloned_graph_head_node->destroy();
 
   if (cloned_graph_diagram)
     cout << cloned_graph_diagram;
