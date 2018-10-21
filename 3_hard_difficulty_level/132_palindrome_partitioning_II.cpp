@@ -251,6 +251,12 @@ class Solution {
   }
 
  public:
+  Solution() { Solution::start_stop_timer(true); }
+
+  ~Solution() {
+    cout << "\nElapsed time: " << Solution::start_stop_timer() << " seconds\n";
+  }
+
   size_t minCut(string s) {
     s_len = s_len_ = s.length();
 
@@ -290,8 +296,6 @@ class Solution {
 
 int main() {
   Solution s{};
-
-  Solution::start_stop_timer(true);
 
   cout << "s.minCut(\"aab\") -> " << s.minCut(string{"aab"})
        << '\n';  // expected output: 1
@@ -468,8 +472,6 @@ int main() {
               "aa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"})
        << '\n';  // expected output: 0
-
-  cout << "Elapsed time: " << Solution::start_stop_timer() << " seconds\n";
 
   return 0;
 }
