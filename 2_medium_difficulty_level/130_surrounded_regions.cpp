@@ -175,7 +175,7 @@ int main() {
   vector<vector<char>> input1{{'X', 'X', 'X', 'X'},
                               {'X', 'O', 'O', 'X'},
                               {'X', 'X', 'O', 'X'},
-                              {'X', 'O', 'X', 'X'}};
+                              {'O', 'O', 'X', 'X'}};
 
   s.solve(input1);
 
