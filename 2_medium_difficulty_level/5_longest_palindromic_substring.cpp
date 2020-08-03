@@ -16,6 +16,8 @@ Input: "cbbd"
 Output: "bb"
 */
 
+#include <algorithm>
+#include <cctype>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -30,6 +32,14 @@ static int sr = []() {
 
 class Solution {
  public:
+  static string trim(const string& str) {
+    return string(std::find_if(cbegin(str), cend(str),
+                               [](const char ch) { return !isspace(ch); }),
+                  std::find_if(crbegin(str), crend(str), [](const char ch) {
+                    return !isspace(ch);
+                  }).base());
+  }
+
   static bool check_if_current_substring_is_palindromic(
       const std::string& str,
       const size_t start_index,
@@ -44,7 +54,7 @@ class Solution {
     return !(i < j);
   }
 
-  std::string longestPalindrome(std::string str) {
+  std::string longestPalindrome_v1(std::string str) {
     const size_t str_len{str.length()};
 
     if (str_len < 2U)
@@ -100,7 +110,7 @@ class Solution {
 
     for (int i{str_len / 2 - 1}, j{str_len / 2}; i >= 0 && j < str_len;
          --i, ++j) {
-      if (i > 0 && 2 * i + 1 > max_substr_len) {
+      if (i > 0 && 2 * i + 1 > max_substr_len && str[i - 1] == str[i + 1]) {
         const pair<int, int> p1{
             get_palindromic_substring_start_and_len(str, i, i)};
 
@@ -120,7 +130,8 @@ class Solution {
         }
       }
 
-      if (j < str_len - 1 && 2 * (str_len - 1 - j) + 1 > max_substr_len) {
+      if (j < str_len - 1 && 2 * (str_len - 1 - j) + 1 > max_substr_len &&
+          str[j - 1] == str[j + 1]) {
         const pair<int, int> p3{
             get_palindromic_substring_start_and_len(str, j, j)};
 
@@ -153,6 +164,9 @@ int main() {
        << '\n';  // expected output: "bab" or "aba"
   cout << "s.longestPalindrome_v2(\"cbbd\") -> "
        << s.longestPalindrome_v2("cbbd") << '\n';  // expected output: "bb"
+  cout << "s.longestPalindrome_v2(\"racecar\") -> "
+       << s.longestPalindrome_v2("racecar")
+       << '\n';  // expected output: "racecar"
 
   return 0;
 }
